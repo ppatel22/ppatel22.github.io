@@ -1,0 +1,781 @@
+/* ============================================
+   Long-Distance Protocol – Valentine Delivery
+   styles.css
+   ============================================ */
+
+/* ---------- CSS Custom Properties ---------- */
+:root {
+  /* Pixel/kawaii phase colors (phases 1 & 2) */
+  --pixel-bg: #1a1a2e;
+  --pixel-bg-deep: #0f0f23;
+  --pixel-surface: rgba(30, 20, 50, 0.92);
+  --pixel-text: #e8dff5;
+  --pixel-accent: #a78bfa;
+  --pixel-accent-bright: #c4b5fd;
+  --pixel-mint: #6ee7b7;
+  --pixel-pink: #f9a8d4;
+  --pixel-peach: #fbbf8b;
+  --pixel-yellow: #fde68a;
+  --pixel-glow: 0 0 12px rgba(167, 139, 250, 0.5);
+  --pixel-glow-strong: 0 0 24px rgba(167, 139, 250, 0.7);
+  --pixel-glow-pink: 0 0 12px rgba(249, 168, 212, 0.5);
+
+  /* Romantic phase colors (phase 3 — letter) */
+  --warm-bg: #fdf6f0;
+  --warm-surface: #fff9f5;
+  --warm-text: #3d2c2c;
+  --warm-text-light: #7a6565;
+  --warm-accent: #e8828a;
+  --warm-accent-deep: #d4606a;
+  --warm-pink: #fce4ec;
+  --warm-glow: 0 0 30px rgba(232, 130, 138, 0.3);
+
+  /* Typography */
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  --font-heading: 'Syncopate', sans-serif;
+  --font-body-romantic: 'Playfair Display', Georgia, 'Times New Roman', serif;
+
+  /* Transitions */
+  --transition-smooth: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--pixel-bg);
+  color: var(--pixel-text);
+  font-family: var(--font-pixel);
+  overflow-x: hidden;
+  min-height: 100vh;
+  transition: background-color 2s ease, color 2s ease;
+}
+
+/* When in letter/romantic phase */
+body.romantic-phase {
+  background-color: var(--warm-bg);
+  color: var(--warm-text);
+}
+
+/* ---------- Phase Sections ---------- */
+.phase {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+  z-index: 1;
+}
+
+.phase.active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+/* Letter phase needs to scroll */
+#letter-phase {
+  position: relative;
+  height: auto;
+  min-height: 100vh;
+  overflow-y: visible;
+}
+
+#letter-phase.active {
+  position: relative;
+  z-index: 10;
+}
+
+/* ============================================
+   PHASE 1: LANDING SCREEN (Kawaii Pixel)
+   ============================================ */
+
+#landing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pixel-bg);
+}
+
+#starfield {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  /* Pixelate the starfield canvas */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.landing-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Terminal text lines — pixel font */
+.terminal-block {
+  text-align: left;
+  display: inline-block;
+  margin-bottom: 3rem;
+}
+
+.terminal-line {
+  font-family: var(--font-pixel);
+  font-size: clamp(0.55rem, 1.8vw, 0.75rem);
+  color: var(--pixel-text);
+  line-height: 2.8;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.terminal-line.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.text-glow {
+  color: var(--pixel-mint);
+  text-shadow: 0 0 8px rgba(110, 231, 183, 0.6);
+}
+
+/* Begin Transmission Button — pixel/retro style */
+.btn-neon {
+  font-family: var(--font-pixel);
+  font-size: clamp(0.5rem, 1.5vw, 0.7rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pixel-bg-deep);
+  background: var(--pixel-accent);
+  border: none;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  /* Pixel-art double border effect */
+  box-shadow:
+    0 4px 0 0 #7c3aed,
+    0 0 0 3px var(--pixel-bg-deep),
+    0 0 0 6px var(--pixel-accent-bright);
+}
+
+.btn-neon::before {
+  content: none; /* Remove the old sweep effect */
+}
+
+.btn-neon:hover {
+  background: var(--pixel-accent-bright);
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 0 0 #7c3aed,
+    0 0 0 3px var(--pixel-bg-deep),
+    0 0 0 6px var(--pixel-accent-bright),
+    0 0 20px rgba(167, 139, 250, 0.4);
+}
+
+.btn-neon:hover::before {
+  left: -100%; /* No-op since content is none */
+}
+
+.btn-neon:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 0 #7c3aed,
+    0 0 0 3px var(--pixel-bg-deep),
+    0 0 0 6px var(--pixel-accent-bright);
+}
+
+.btn-neon.show {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  animation: pixelBounceIn 0.6s ease forwards;
+}
+
+@keyframes pixelBounceIn {
+  0% { opacity: 0; transform: translateY(12px); }
+  60% { opacity: 1; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   PHASE 2: GLOBE + STATUS OVERLAY (Kawaii Pixel)
+   ============================================ */
+
+#globe-phase {
+  background: var(--pixel-bg-deep);
+}
+
+#globe-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Globe loading indicator — pixel style */
+.globe-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  font-family: var(--font-pixel);
+  font-size: 0.6rem;
+  color: var(--pixel-accent-bright);
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+  animation: loadingPulse 1.2s steps(2) infinite;
+}
+
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Status Overlay Panel — pixel art window style */
+#status-overlay {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  background: var(--pixel-surface);
+  border: 3px solid var(--pixel-accent);
+  padding: 1rem 1.25rem;
+  min-width: 260px;
+  z-index: 20;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  /* Pixel-art double border */
+  box-shadow:
+    0 0 0 3px var(--pixel-bg-deep),
+    0 0 0 6px var(--pixel-accent-bright),
+    0 0 20px rgba(167, 139, 250, 0.15);
+}
+
+#status-overlay.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.status-header {
+  font-family: var(--font-pixel);
+  font-size: 0.45rem;
+  color: var(--pixel-pink);
+  letter-spacing: 0.15em;
+  margin-bottom: 0.9rem;
+  text-transform: uppercase;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed rgba(249, 168, 212, 0.3);
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(167, 139, 250, 0.1);
+}
+
+.status-row:last-child {
+  border-bottom: none;
+}
+
+.status-label {
+  font-family: var(--font-pixel);
+  font-size: 0.4rem;
+  color: rgba(232, 223, 245, 0.5);
+}
+
+.status-value {
+  font-family: var(--font-pixel);
+  font-size: 0.45rem;
+  color: var(--pixel-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.signal-pulse {
+  color: var(--pixel-mint);
+  animation: signalPulse 2s steps(3) infinite;
+}
+
+@keyframes signalPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Status change animations */
+.status-value.status-arriving {
+  color: var(--pixel-yellow);
+}
+
+.status-value.status-delivered {
+  color: var(--pixel-mint);
+  text-shadow: 0 0 8px rgba(110, 231, 183, 0.6);
+}
+
+/* Connection Established Overlay — pixel style */
+#connection-established {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+  background: radial-gradient(ellipse at center, rgba(167, 139, 250, 0.12) 0%, transparent 70%);
+}
+
+#connection-established.visible {
+  opacity: 1;
+}
+
+.ce-text {
+  font-family: var(--font-pixel);
+  font-size: clamp(0.65rem, 2.5vw, 1.1rem);
+  color: var(--pixel-mint);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 16px rgba(110, 231, 183, 0.6);
+  animation: cePulse 1.5s steps(4) forwards;
+}
+
+@keyframes cePulse {
+  0% { opacity: 0; transform: scale(0.9); }
+  30% { opacity: 1; transform: scale(1.05); }
+  60% { transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================
+   PHASE 3: THE LETTER
+   ============================================ */
+
+/* Ambient floating particles */
+#ambient-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ambient-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--warm-accent);
+  border-radius: 50%;
+  opacity: 0;
+  animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(100vh) scale(0.5);
+  }
+  10% {
+    opacity: 0.3;
+  }
+  90% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10vh) scale(1);
+  }
+}
+
+/* Letter Container */
+.letter-container {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 4rem 2rem 3rem;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1.2s ease 0.3s, transform 1.2s ease 0.3s;
+}
+
+#letter-phase.active .letter-container {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Letter Header */
+.letter-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.letter-protocol {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 300;
+  letter-spacing: 0.25em;
+  color: var(--warm-text-light);
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+}
+
+.letter-title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.1rem, 3.5vw, 1.6rem);
+  font-weight: 700;
+  color: var(--warm-text);
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.letter-meta {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 300;
+  color: var(--warm-text-light);
+  letter-spacing: 0.1em;
+}
+
+/* Letter Divider */
+.letter-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--warm-accent), transparent);
+  margin: 2.5rem 0;
+  opacity: 0.4;
+}
+
+/* Letter Sections */
+.letter-section {
+  margin-bottom: 1rem;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--warm-accent-deep);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.letter-body p {
+  font-family: var(--font-body-romantic);
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+  line-height: 1.85;
+  color: var(--warm-text);
+  margin-bottom: 1.25rem;
+}
+
+.letter-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Romantic body has slightly different styling */
+.romantic-body p {
+  font-style: italic;
+}
+
+.romantic-body p:last-child {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--warm-accent-deep);
+}
+
+/* Typewriter effect */
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--warm-accent);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.8s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ---------- The Ask ---------- */
+.the-ask {
+  text-align: center;
+  padding: 2rem 0 1rem;
+}
+
+.ask-text {
+  font-family: var(--font-body-romantic);
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
+  font-weight: 600;
+  color: var(--warm-accent-deep);
+  margin: 2rem 0 2.5rem;
+  line-height: 1.4;
+}
+
+.ask-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+/* Accept Button */
+.btn-accept {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, var(--warm-accent), var(--warm-accent-deep));
+  border: none;
+  padding: 1rem 2.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(232, 130, 138, 0.3);
+}
+
+.btn-accept:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(232, 130, 138, 0.5);
+}
+
+.btn-accept:active {
+  transform: translateY(0);
+}
+
+/* Retry Button */
+.btn-retry {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--warm-accent-deep);
+  background: transparent;
+  border: 1.5px solid var(--warm-accent);
+  padding: 1rem 2.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.btn-retry:hover {
+  background: rgba(232, 130, 138, 0.08);
+}
+
+.btn-retry.shake {
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+.btn-retry.dodge {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-retry.hiding {
+  opacity: 0;
+  transform: scale(0.5);
+  pointer-events: none;
+}
+
+/* Retry error tooltip */
+.retry-error {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--warm-accent-deep);
+  margin-top: 1rem;
+  min-height: 1.2rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.retry-error.visible {
+  opacity: 1;
+}
+
+/* ---------- Accepted State ---------- */
+.accepted-state {
+  text-align: center;
+  padding: 3rem 0 2rem;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: max-height 0.6s ease, opacity 1s ease 0.2s, transform 1s ease 0.2s;
+}
+
+.accepted-state.visible {
+  max-height: 300px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.protocol-locked {
+  font-family: var(--font-mono);
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  font-weight: 400;
+  color: var(--warm-text-light);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.valentine-confirmed {
+  font-family: var(--font-body-romantic);
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  font-weight: 600;
+  color: var(--warm-accent-deep);
+  text-shadow: 0 0 40px rgba(232, 130, 138, 0.3);
+}
+
+/* ---------- Footer Countdown ---------- */
+.letter-footer {
+  text-align: center;
+  padding: 3rem 0 2rem;
+}
+
+#countdown {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 300;
+  color: var(--warm-text-light);
+  letter-spacing: 0.15em;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Status overlay repositions */
+  #status-overlay {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    min-width: unset;
+  }
+
+  .letter-container {
+    padding: 3rem 1.5rem 2rem;
+  }
+
+  .letter-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .ask-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn-accept,
+  .btn-retry {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .terminal-block {
+    padding: 0 1rem;
+  }
+
+  .terminal-line {
+    font-size: 0.5rem;
+    line-height: 3;
+  }
+
+  .btn-neon {
+    font-size: 0.45rem;
+    padding: 0.85rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .letter-title {
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  .ask-text {
+    font-size: 1.3rem;
+  }
+
+  .ce-text {
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+  }
+
+  .status-label {
+    font-size: 0.35rem;
+  }
+
+  .status-value {
+    font-size: 0.38rem;
+  }
+}
+
+/* ---------- Utility ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

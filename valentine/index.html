@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Long-Distance Protocol</title>
+  <meta name="description" content="Initializing Long-Distance Protocol...">
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google Fonts: Press Start 2P (pixel), Syncopate (engineering headings), Playfair Display (romantic body), JetBrains Mono (terminal) -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ============================================ -->
+  <!-- PHASE 1: Landing Screen                      -->
+  <!-- ============================================ -->
+  <section id="landing" class="phase active">
+    <canvas id="starfield"></canvas>
+    <div class="landing-content">
+      <div class="terminal-block">
+        <p class="terminal-line" data-delay="0">> Initializing Long-Distance Protocol...</p>
+        <p class="terminal-line" data-delay="800">> Origin: San Francisco, CA</p>
+        <p class="terminal-line" data-delay="1600">> Destination: Cambridge, MA</p>
+        <p class="terminal-line" data-delay="2400">> Status: <span class="text-glow">Ready</span></p>
+      </div>
+      <button id="btn-begin" class="btn-neon" style="opacity:0; pointer-events:none;">
+        Begin Transmission
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- PHASE 2: Globe + Status Overlay              -->
+  <!-- ============================================ -->
+  <section id="globe-phase" class="phase">
+    <div id="globe-container"></div>
+    <div id="globe-loading" class="globe-loading">Establishing connection...</div>
+
+    <!-- Status Overlay Panel -->
+    <div id="status-overlay">
+      <div class="status-header">// TRANSMISSION STATUS</div>
+      <div class="status-row">
+        <span class="status-label">Latency</span>
+        <span class="status-value"><span id="stat-latency">0</span> miles</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Signal Strength</span>
+        <span class="status-value"><span id="stat-signal" class="signal-pulse">100%</span></span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Packet Status</span>
+        <span class="status-value" id="stat-packet">In Transit</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Est. Delivery</span>
+        <span class="status-value" id="stat-eta">February 13, 2026</span>
+      </div>
+    </div>
+
+    <!-- Connection Established overlay -->
+    <div id="connection-established">
+      <div class="ce-text">Connection Established</div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- PHASE 3: The Letter                          -->
+  <!-- ============================================ -->
+  <section id="letter-phase" class="phase">
+    <!-- Ambient floating particles -->
+    <div id="ambient-particles"></div>
+
+    <article class="letter-container">
+      <!-- Letter Header -->
+      <header class="letter-header">
+        <p class="letter-protocol">PROTOCOL // LDP-2026-0214</p>
+        <h1 class="letter-title">Valentine Request</h1>
+        <div class="letter-meta">
+          <span>FROM: sf_node@westcoast</span>
+          <span>TO: cambridge_node@eastcoast</span>
+        </div>
+      </header>
+
+      <div class="letter-divider"></div>
+
+      <!-- Section 1: Transmission Log -->
+      <section class="letter-section">
+        <h2 class="section-label">// 01 &mdash; TRANSMISSION LOG</h2>
+        <div class="letter-body typewriter-target">
+          <p>With 3,000 miles between us, packets get dropped (always my wifi, never yours) and ping latency is high, so this might get to you later than I'd like.</p>
+          <p>Regardless, I'm grateful that our personal connection remains as strong as ever. Through time zones and busy schedules, knowing you're on the other end makes my day so much brighter.</p>
+          <p>I love you so much Anu, and I'm so grateful to call you my girlfriend.</p>
+        </div>
+      </section>
+
+      <div class="letter-divider"></div>
+
+      <!-- Section 2: The Ask -->
+      <section class="letter-section the-ask">
+        <h2 class="section-label">// 02 &mdash; REQUEST</h2>
+        <p class="ask-text">Will you be my Valentine?</p>
+        <div class="ask-buttons">
+          <button id="btn-accept" class="btn-accept">Accept Transmission</button>
+          <button id="btn-retry" class="btn-retry">Retry Connection</button>
+        </div>
+        <p id="retry-error" class="retry-error"></p>
+      </section>
+
+      <!-- Accepted State (hidden initially) -->
+      <div id="accepted-state" class="accepted-state">
+        <div class="accepted-message">
+          <p class="protocol-locked">Protocol locked.</p>
+          <p class="valentine-confirmed">Valentine confirmed.</p>
+        </div>
+      </div>
+
+      <!-- Footer Countdown -->
+      <footer class="letter-footer">
+        <div id="countdown"></div>
+      </footer>
+    </article>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- Scripts                                       -->
+  <!-- ============================================ -->
+
+  <!-- Globe.gl (deferred - only loaded when needed) -->
+  <script src="https://unpkg.com/globe.gl" defer></script>
+
+  <!-- canvas-confetti (lightweight, ~6KB) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js" defer></script>
+
+  <!-- Main application logic -->
+  <script src="main.js" defer></script>
+</body>
+</html>
