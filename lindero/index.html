@@ -416,54 +416,64 @@ const win = (a, b, lo, hi, mull) => ({ a, b, lo, hi, type: 'win', mull });
 
 // ================= MAIN BLOCK  (x -7.4..7.0, y -4.2..5.4) =================
 const XT = 0.16; // exterior wall thickness
+// Layout (from listing photos + walkthrough + owner notes):
+//  south of the hall, west->east: Bedroom (wide) | hall bath | coat closet | ENTRY
+//  entry runs straight north into the living room; kitchen (U + N-S peninsula) east of the entry,
+//  dining east of the peninsula flowing north into the living room; wall between kitchen and living.
+//  covered deck tucked in the corner west of the living room (living's west wall is glass).
 // South facade (front), x -7.4..1.1
 wall(-7.4, -4.2, 1.1, -4.2, { t: XT, matR: M.ext, ops: [
-  win(-7.3, -6.7, 2.12, 'top'), win(-6.7, -5.0, 1.0, 2.05), win(-6.7, -5.0, 2.12, 'top'), win(-5.0, -4.3, 2.12, 'top'),
-  win(-4.1, -2.5, 2.1, 'top', 0.8),
-  door(-0.2, 0.7), win(0.72, 1.0, 0.0, 2.1), win(-0.2, 1.0, 2.12, 'top'),
+  win(-7.3, -6.5, 2.12, 'top'), win(-6.5, -4.7, 1.0, 2.05), win(-6.5, -4.7, 2.12, 'top'), win(-4.7, -3.2, 2.12, 'top'),
+  win(-3.0, -1.4, 2.1, 'top', 0.8),
+  win(-0.45, -0.1, 0.0, 2.1), door(-0.1, 0.8), win(-0.45, 0.8, 2.12, 'top'),
 ] });
-// Kitchen <-> laundry hall (junction with front wing) – follows the wing's taller ceiling
-wall(1.1, -4.3, 7.0, -4.3, { top: hWing, leafSide: -1, ops: [door(1.5, 2.4)] });
-// North facade (back) – walls of glass
-// (clerestory glass runs between the wall top and the roof in the bedrooms; living/dining is glass + fireplace + slider)
-wall(-7.4, 5.4, 7.0, 5.4, { t: XT, matL: M.ext, ops: [
-  win(-7.3, -6.4, 2.1, 'top'), door(-6.4, -4.7, 2.1), win(-6.4, -4.7, 2.1, 'top'), win(-4.7, -3.7, 2.1, 'top'),
-  win(-3.5, -3.0, 2.12, 'top'), win(-3.0, -1.3, 0.9, 2.1), win(-3.0, -1.3, 2.12, 'top'), win(-1.3, -0.7, 2.12, 'top'),
-  win(-0.5, 1.35, 0, 'top', 0.9),
-  door(2.35, 4.0, 2.15), win(2.35, 4.0, 2.15, 'top'), win(4.0, 6.9, 0, 'top', 1.0),
+// Dining/kitchen <-> laundry (junction with front wing); high window into the master bath above the main roof
+wall(1.1, -4.3, 7.0, -4.3, { top: hWing, leafSide: -1, ops: [open(1.5, 2.4), win(3.5, 4.6, 2.5, 'top')] });
+// North facade (back): bedrooms with sliders/clerestories, then (after the covered deck) the living room
+wall(-7.4, 5.4, -0.6, 5.4, { t: XT, matL: M.ext, ops: [
+  win(-7.3, -6.4, 2.12, 'top'), door(-6.4, -4.7, 2.1), win(-4.7, -3.9, 2.12, 'top'),
+  win(-3.6, -3.0, 2.12, 'top'), win(-3.0, -1.3, 0.9, 2.05), win(-1.3, -0.7, 2.12, 'top'),
 ] });
+// living room back wall: tile fireplace panel | slider to the deck | low wall with clerestory
+wall(2.4, 5.4, 7.0, 5.4, { t: XT, matL: M.ext, ops: [door(3.4, 5.2, 2.15), win(5.2, 6.9, 2.15, 'top', 0.9)] });
+// covered deck in the corner: glass on both sides (foyer + living room)
+wall(-0.6, 2.6, 2.4, 2.6, { t: XT, matL: M.ext, ops: [win(-0.5, 1.3, 0, 'top', 0.9), door(1.4, 2.3, 2.15)] });
+wall(2.4, 2.6, 2.4, 5.4, { t: XT, matL: M.ext, ops: [win(2.5, 5.3, 0, 'top', 0.9)] });
 // West gable end
 wall(-7.4, -4.2, -7.4, 5.4, { t: XT, matL: M.ext, ops: [
   win(-3.3, -1.2, 1.0, 2.0), win(-4.1, 0.0, EAVE, 'top', 1.0),
   win(1.3, 5.3, EAVE, 'top', 1.0), win(2.6, 4.4, 1.0, 2.0),
 ] });
-// East gable end
-// East wall of kitchen/living: painted concrete block with a clerestory band up to the roof (listing photo)
+// East wall of dining/living: painted concrete block with a clerestory band up to the roof (listing photo)
 wall(7.0, -4.3, 7.0, 5.4, { t: XT, matR: M.ext, mat: M.block, ops: [
   win(-4.1, 5.3, 2.05, 'top', 1.2),
 ] });
-// Interior: west wall of entry/living (bedroom wing boundary)
-wall(-0.6, -4.2, -0.6, 5.4, { ops: [door(-3.5, -2.7), open(0.0, 1.2, 2.2)] });
-// Entry/kitchen partition (wood paneling)
-wall(1.2, -4.2, 1.2, -2.2, { mat: M.panel });
-// Bedroom hall walls
-wall(-7.4, 0.0, -0.6, 0.0, { ops: [door(-5.1, -4.3), door(-3.7, -2.9)] });
-wall(-7.4, 1.2, -0.6, 1.2, { leafSide: -1, ops: [door(-4.6, -3.8), door(-3.4, -2.6)] });
-wall(-4.2, -4.2, -4.2, 0.0);
-wall(-2.4, -4.2, -2.4, 0.0);
-wall(-3.6, 1.2, -3.6, 5.4);
+// bedroom wing east wall: coat closet + hall opening off the entry; exterior (block) along the covered deck
+wall(-0.6, -4.2, -0.6, 2.6, { ops: [door(-2.9, -2.1), open(0.0, 1.2, 2.2)] });
+wall(-0.6, 2.6, -0.6, 5.4, { t: XT, matR: M.block, ops: [win(3.3, 4.7, 1.0, 2.05)] });
+// entry | kitchen (wood paneling on the entry side), door near the north end
+wall(1.2, -4.2, 1.2, 0.0, { matL: M.panel, ops: [door(-1.7, -0.9)] });
+// kitchen | living room (tall cabinets on the kitchen side); ends in the post seen from the dining area
+wall(1.2, 0.0, 4.4, 0.0);
+// bedroom hall
+wall(-7.4, 0.0, -0.6, 0.0, { ops: [door(-4.0, -3.2), door(-2.6, -1.8)] });
+wall(-7.4, 1.2, -0.6, 1.2, { leafSide: -1, ops: [door(-4.6, -3.9), door(-1.7, -0.9)] });
+wall(-3.1, -4.2, -3.1, 0.0);
+wall(-1.3, -4.2, -1.3, 0.0);
+wall(-3.8, 1.2, -3.8, 5.4);
 
-// ================= FRONT WING  (rooms x 1.1..7.0, carport x 7.0..10.5 under the same roof; y -11.6..-4.3) =================
-wall(1.1, -11.6, 1.1, -4.3, { t: XT, top: hWing, matL: M.ext, ops: [win(-8.6, -7.2, 1.6, 2.05), win(-6.2, -4.6, 2.05, 2.42)] });
+// ================= FRONT WING  (x 1.1..7.0, covered patio/carport x 7.0..10.5 under the same roof; y -11.6..-4.3) =================
+// kitchen -> laundry/pantry -> open skylit mudroom; master bedroom + bath on the east, outside (red) door on the west
+wall(1.1, -11.6, 1.1, -4.3, { t: XT, top: hWing, matL: M.ext, ops: [door(-9.6, -8.7), win(-9.6, -8.7, 2.12, 2.42), win(-6.2, -4.6, 2.05, 2.42)] });
 wall(1.1, -11.6, 7.0, -11.6, { t: XT, top: hWing, matR: M.ext, ops: [
-  win(4.3, 6.2, 1.0, 2.05), win(3.5, 6.9, 2.36, 'top', 1.2),
+  win(1.6, 2.6, 1.6, 2.05), win(4.3, 6.2, 1.0, 2.05), win(3.5, 6.9, 2.36, 'top', 1.2),
 ] });
 // interior
-wall(1.1, -6.4, 7.0, -6.4, { top: hWing, ops: [door(2.0, 2.8), door(4.0, 4.8)] });
-wall(3.4, -11.6, 3.4, -6.4, { top: hWing, ops: [door(-10.8, -10.0)] });
-wall(1.1, -9.2, 3.4, -9.2, { top: hWing });
-// carport side: Bedroom 1's wall of glass looks onto the covered carport; the laundry hall has the side door
-wall(7.0, -11.6, 7.0, -4.3, { t: XT, top: hWing, matR: M.ext, ops: [win(-10.9, -7.1, 0, 2.3, 1.3), door(-5.8, -4.9), win(-5.8, -4.9, 2.12, 2.42)] });
+wall(3.2, -11.6, 3.2, -4.3, { top: hWing, ops: [door(-8.6, -7.8), door(-5.9, -5.1)] });
+wall(3.2, -6.6, 7.0, -6.6, { top: hWing, ops: [door(6.0, 6.8)] });
+wall(5.8, -6.6, 5.8, -4.3, { top: hWing });
+// east side: the master bedroom's wall of glass looks onto the covered patio
+wall(7.0, -11.6, 7.0, -4.3, { t: XT, top: hWing, matR: M.ext, ops: [win(-10.9, -7.1, 0, 2.3, 1.3), win(-6.4, -4.5, 2.12, 2.42)] });
 
 // ---------- generic geometry helpers ----------
 function quad(a, b, c, d, mat, { u = new THREE.Vector3(1, 0, 0), v = null, cast = false, receive = true, parent = groups.house } = {}) {
@@ -542,16 +552,19 @@ for (const j of trimJobs) {
 }
 
 // ---------- floors ----------
-flatRect(-7.4, -4.2, 7.0, 5.4, 0.0, M.floor);
+flatRect(-7.4, -4.2, 7.0, 2.6, 0.0, M.floor);
+flatRect(-7.4, 2.6, -0.6, 5.4, 0.0, M.floor);
+flatRect(2.4, 2.6, 7.0, 5.4, 0.0, M.floor);
+flatRect(-0.6, 2.6, 2.4, 5.4, -0.03, M.deck);   // covered deck
 flatRect(1.1, -11.6, 7.0, -4.3, 0.0, M.floor);
-flatRect(1.1, -9.2, 3.4, -6.4, 0.004, M.tileD);
-flatRect(-4.2, -4.2, -2.4, 0.0, 0.004, M.tileB);
-flatRect(-0.55, -4.15, 1.15, -3.5, 0.006, std({ color: 0x8a4a2a, roughness: .9 })); // entry mat
+flatRect(3.2, -6.6, 5.8, -4.3, 0.004, M.tileD);
+flatRect(-3.1, -4.2, -1.3, 0.0, 0.004, M.tileB);
+flatRect(-0.35, -4.15, 1.05, -3.5, 0.006, std({ color: 0x8a4a2a, roughness: .9 })); // entry mat
 
 // ---------- ceilings + roofs ----------
 const RT = 0.24; // roof thickness above ceiling
 // skylights seen in the listing photos: bedroom 1, the carport, the bedroom hall
-const SKYLIGHTS = [[5.2, -9.0, 0.8, 1.2, 'wing'], [8.9, -8.0, 0.8, 1.4, 'wing'], [-4.0, 0.6, 0.7, 0.9, 'main']];
+const SKYLIGHTS = [[5.2, -9.0, 0.8, 1.2, 'wing'], [2.15, -8.4, 0.8, 1.2, 'wing'], [8.9, -8.0, 0.8, 1.4, 'wing'], [-4.6, 0.6, 0.7, 0.9, 'main']];
 const casterMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
 // invisible roof shadow-caster with holes at the skylights, so sunlight lands inside
 function roofCaster(corners, hFn) {
@@ -599,91 +612,97 @@ beam(P(5.8, hWing(5.8, 0) - .12, -12.6), P(5.8, hWing(5.8, 0) - .12, -4.3), 0.16
 function skylight(x, y, w, l, hFn) { const h = hFn(x, y) - 0.02; box(x - w / 2, y - l / 2, x + w / 2, y + l / 2, h - 0.03, h, M.sky, { collide: false, cast: false, parent: groups.overhead }); }
 for (const [x, y, w, l, f] of SKYLIGHTS) skylight(x, y, w, l, f === 'wing' ? hWing : hMain);
 
-// ---------- kitchen ----------
+// ---------- kitchen: range wall on the west (x=1.2), tall cabinets on the living-room wall, N-S peninsula ----------
 const CT = 0.92;
-box(2.7, -4.24, 6.2, -3.62, 0.1, CT - .04, M.cabFront);
-box(2.74, -3.7, 6.16, -3.64, 0, 0.1, M.black, { collide: false }); // toe kick
-for (let x = 2.95; x < 6.1; x += 0.5) { if (x > 3.9 && x < 4.75) continue; box(x - .08, -3.62, x + .08, -3.6, CT - .16, CT - .14, M.steel, { collide: false }); }
-box(2.68, -4.24, 6.22, -3.58, CT - .04, CT, M.steel, { collide: false });
-box(3.95, -4.2, 4.7, -3.6, CT, CT + .02, M.black, { collide: false }); // range top
-box(3.95, -3.62, 4.7, -3.6, .1, .8, M.steel, { collide: false });
-quad(P(2.7, CT, -4.23), P(6.2, CT, -4.23), P(6.2, 1.45, -4.23), P(2.7, 1.45, -4.23), M.marble, { u: new THREE.Vector3(1, 0, 0), v: new THREE.Vector3(0, 1, 0) });
-box(2.7, -4.24, 3.9, -3.9, 1.45, 2.15, M.cabFront, { collide: false });
-box(4.75, -4.24, 6.2, -3.9, 1.45, 2.15, M.cabFront, { collide: false });
-box(3.95, -3.6, 4.7, -3.58, 0.18, 0.72, M.black, { collide: false }); // oven window
-for (let i = 0; i < 4; i++) box(4.02 + i * 0.18, -3.6, 4.08 + i * 0.18, -3.56, 0.8, 0.85, M.black, { collide: false }); // knobs
-box(4.0, -4.24, 4.65, -3.85, 1.6, 1.85, M.steel, { collide: false }); // hood
-box(6.22, -4.24, 6.94, -3.45, 0, 1.82, M.steel); // fridge
-box(6.36, -3.45, 6.94, -1.3, 0.1, CT - .04, M.cabFront);
-box(6.3, -4.2, 6.32, -3.5, 0.3, 1.7, M.black, { collide: false }); // fridge door seam
-box(6.18, -3.6, 6.2, -3.5, 0.9, 1.5, M.steel, { collide: false });
-box(6.32, -3.45, 6.94, -1.3, CT - .04, CT, M.steel, { collide: false });
-box(6.6, -2.8, 6.9, -2.2, CT, CT + .02, M.steel, { collide: false }); // sink
-box(2.1, -1.55, 5.0, -1.0, 0.1, CT - .04, M.cabFront);
-box(2.14, -1.5, 4.96, -1.05, 0, 0.1, M.black, { collide: false });
+const KX = 1.26, KD = 0.62; // west run depth
+box(KX, -4.24, KX + KD, -2.5, 0.1, CT - .04, M.cabFront);
+box(KX, -4.24, KX + .08, -2.5, 0, 0.1, M.black, { collide: false });
+box(KX, -4.24, KX + KD + .04, -2.5, CT - .04, CT, M.steel, { collide: false });
+box(KX, -3.62, KX + KD + .02, -2.88, 0.0, CT - .02, M.steel);                  // range
+box(KX + .1, -3.6, KX + KD - .02, -2.9, CT, CT + .02, M.black, { collide: false });
+box(KX + KD + .02, -3.55, KX + KD + .04, -2.95, 0.18, 0.72, M.black, { collide: false }); // oven window
+for (let i = 0; i < 4; i++) box(KX + KD + .02, -3.52 + i * 0.17, KX + KD + .06, -3.46 + i * 0.17, 0.8, 0.85, M.black, { collide: false });
+quad(P(1.21, CT, -2.5), P(1.21, CT, -4.24), P(1.21, 1.45, -4.24), P(1.21, 1.45, -2.5), M.marble, { u: new THREE.Vector3(0, 0, 1), v: new THREE.Vector3(0, 1, 0) });
+box(KX, -4.24, KX + .34, -3.65, 1.45, 2.15, M.cabFront, { collide: false });
+box(KX, -2.85, KX + .34, -2.5, 1.45, 2.15, M.cabFront, { collide: false });
+box(KX, -3.57, KX + .42, -2.93, 1.6, 1.85, M.steel, { collide: false });          // hood
+box(KX, -2.46, KX + .74, -1.75, 0, 1.82, M.steel);                                 // fridge
+box(KX + .74, -2.1, KX + .76, -2.06, 0.3, 1.7, M.black, { collide: false });
+// living-room wall: tall pantry + oven/microwave stack, base run with sink window-height uppers
+box(2.0, -0.62, 2.8, -0.04, 0, 2.15, M.cabFront);
+box(2.8, -0.62, 4.34, -0.04, 0.1, CT - .04, M.cabFront);
+box(2.8, -0.66, 4.36, -0.04, CT - .04, CT, M.steel, { collide: false });
+quad(P(2.8, CT, -0.03), P(4.36, CT, -0.03), P(4.36, 1.45, -0.03), P(2.8, 1.45, -0.03), M.marble, { u: new THREE.Vector3(1, 0, 0), v: new THREE.Vector3(0, 1, 0) });
+box(2.8, -0.38, 4.36, -0.04, 1.45, 2.15, M.cabFront, { collide: false });
+box(2.2, -0.64, 2.6, -0.62, 1.0, 1.3, M.black, { collide: false });               // wall oven / microwave
+// peninsula (sink), running N-S; dining sits just east of it
+box(3.1, -3.7, 3.72, -1.4, 0.1, CT - .04, M.cabFront);
+box(3.04, -3.74, 3.78, -1.36, CT - .04, CT, M.steel, { collide: false });
+box(3.2, -2.9, 3.55, -2.3, CT - .03, CT + .005, M.steel, { collide: false });     // sink
 // pendant lights over the peninsula
-for (const x of [2.7, 3.55, 4.4]) {
-  const h = hMain(x, -1.3);
-  box(x - .004, -1.304, x + .004, -1.296, 1.75, h, M.black, { collide: false, cast: false, parent: groups.overhead });
+for (const y of [-3.2, -2.55, -1.9]) {
+  const x = 3.41, h = hMain(x, y);
+  box(x - .004, y - .004, x + .004, y + .004, 1.75, h, M.black, { collide: false, cast: false, parent: groups.overhead });
   const shade = new THREE.Mesh(new THREE.CylinderGeometry(.09, .16, .22, 24, 1, true), std({ color: 0x1a1a1a, roughness: .4, metalness: .6, side: THREE.DoubleSide }));
-  shade.position.copy(P(x, 1.66, -1.3)); groups.overhead.add(shade);
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(.05, 16, 12), M.light); bulb.position.copy(P(x, 1.6, -1.3)); groups.overhead.add(bulb);
+  shade.position.copy(P(x, 1.66, y)); groups.overhead.add(shade);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(.05, 16, 12), M.light); bulb.position.copy(P(x, 1.6, y)); groups.overhead.add(bulb);
 }
 // track lights (living + dining), flush mounts (bedrooms), vanity bars (baths)
 function track(x1, x2, y) { const h = hMain(0, y) - 0.02; box(x1, y - .02, x2, y + .02, h - .03, h, M.black, { collide: false, cast: false, parent: groups.overhead });
   for (let x = x1 + .3; x < x2; x += .7) { const c = new THREE.Mesh(new THREE.CylinderGeometry(.04, .045, .14, 16), M.black); c.position.copy(P(x, h - .1, y)); c.rotation.x = .5; groups.overhead.add(c); } }
-track(0.2, 3.8, 2.0); track(0.2, 3.8, 4.0); track(4.6, 6.6, 2.5);
+track(2.8, 6.6, 1.6); track(2.8, 6.6, 3.9); track(-0.3, 2.0, 1.3);
 function flush(x, y, hFn = hMain) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.17, .17, .05, 32), M.light); m.position.copy(P(x, hFn(x, y) - .04, y)); groups.overhead.add(m); }
-flush(-5.6, 3.3); flush(-2.1, 3.3); flush(-5.8, -2.1); flush(-3.3, -2.1); flush(5.2, -9.4, hWing); flush(-3.6, 0.6); flush(0.3, -3.2); flush(4.0, -5.3, hWing);
-box(-4.17, -1.85, -4.13, -1.25, 1.95, 2.05, M.light, { collide: false });
-box(2.75, -9.17, 3.2, -9.13, 1.95, 2.05, M.light, { collide: false });
-box(-4.16, -1.9, -4.14, -1.2, 1.1, 1.85, std({ color: 0xdde4e8, roughness: .02, metalness: 1 }), { collide: false }); // mirror
-box(2.7, -9.16, 3.25, -9.14, 1.1, 1.85, std({ color: 0xdde4e8, roughness: .02, metalness: 1 }), { collide: false });
-box(2.0, -1.6, 5.1, -0.85, CT - .04, CT, M.steel, { collide: false });
+flush(-5.6, 3.3); flush(-2.2, 3.3); flush(-5.3, -2.1); flush(-2.2, -2.1); flush(5.1, -10.4, hWing); flush(-2.4, 0.6); flush(0.3, -3.2); flush(4.5, -5.6, hWing); flush(2.15, -5.3, hWing);
+box(-3.07, -1.85, -3.03, -1.25, 1.95, 2.05, M.light, { collide: false });
+box(4.3, -6.57, 4.85, -6.53, 1.95, 2.05, M.light, { collide: false });
+box(-3.06, -1.9, -3.04, -1.2, 1.1, 1.85, std({ color: 0xdde4e8, roughness: .02, metalness: 1 }), { collide: false }); // mirror
+box(4.25, -6.56, 4.9, -6.54, 1.1, 1.85, std({ color: 0xdde4e8, roughness: .02, metalness: 1 }), { collide: false });
 
-// ---------- laundry hall ----------
-box(3.55, -6.36, 4.25, -5.7, 0, 1.92, M.white);
-box(3.62, -5.72, 4.18, -5.69, .25, .85, M.black, { collide: false });
-box(1.17, -6.34, 1.75, -4.4, 0, 2.15, M.cabFront); // pantry
+// ---------- laundry / pantry (front of the wing, seen through the kitchen opening) ----------
+box(1.17, -5.7, 1.85, -5.02, 0, 1.92, M.white);                       // stacked washer/dryer
+box(1.85, -5.62, 1.88, -5.1, .25, .85, M.black, { collide: false });
+box(1.17, -4.98, 1.75, -4.4, 0, 2.15, M.cabFront);                    // pantry pull-outs
+box(2.62, -6.2, 3.14, -4.4, 0, 2.15, M.cabFront);                     // pantry wall
+// mudroom bench + hooks by the outside door
+box(1.17, -10.9, 1.6, -9.8, 0, .45, M.woodVanity);
 
-// ---------- bath 1 (front wing) ----------
-box(1.17, -9.14, 1.95, -7.55, 0, .55, M.porcelain);
-box(1.17, -9.14, 1.2, -7.55, .55, 1.9, M.subway, { collide: false });
-box(2.6, -9.14, 3.35, -8.55, 0, .84, M.darkVanity);
-box(2.58, -9.14, 3.36, -8.5, .84, .88, M.granite, { collide: false });
-box(2.15, -9.14, 2.5, -8.95, .3, .75, M.porcelain); box(2.13, -8.95, 2.52, -8.55, .3, .42, M.porcelain);
-// ---------- bath 2 (bedroom wing) ----------
-box(-4.14, -4.14, -2.46, -3.4, 0, .55, M.porcelain);
-quad(P(-4.14, .55, -3.4), P(-2.46, .55, -3.4), P(-2.46, 1.95, -3.4), P(-4.14, 1.95, -3.4), M.subway, { u: new THREE.Vector3(1, 0, 0), v: new THREE.Vector3(0, 1, 0) }).material = M.subway;
-box(-4.14, -2.0, -3.6, -1.1, 0, .84, M.woodVanity);
-box(-4.15, -2.02, -3.55, -1.08, .84, .88, M.whiteMarble, { collide: false });
-box(-4.14, -0.6, -3.75, -0.25, .3, .75, M.porcelain);
-// shower heads, curtain rods, toilet tanks (both are full baths)
 const chrome = std({ color: 0xdfe3e6, roughness: .15, metalness: 1 });
 const curtain = std({ color: 0xf4f6f7, roughness: .6, transparent: true, opacity: .55, side: THREE.DoubleSide });
-// bath 1: tub along the west wall (x 1.17..1.95, y -9.14..-7.55)
-box(1.17, -9.0, 1.3, -8.94, 1.85, 1.9, chrome, { collide: false }); box(1.28, -9.02, 1.36, -8.92, 1.78, 1.86, chrome, { collide: false });
-box(1.93, -9.14, 1.96, -7.55, 1.98, 2.0, chrome, { collide: false });
-box(1.94, -8.0, 1.95, -7.55, .6, 1.98, curtain, { collide: false, cast: false });
-box(2.15, -9.14, 2.5, -9.0, .42, .78, M.porcelain, { collide: false });
-// bath 2: tub along the south wall (x -4.14..-2.46, y -4.14..-3.4)
-box(-4.14, -3.82, -4.0, -3.72, 1.85, 1.9, chrome, { collide: false }); box(-4.04, -3.81, -3.96, -3.73, 1.78, 1.86, chrome, { collide: false });
-box(-4.14, -3.41, -2.46, -3.38, 1.98, 2.0, chrome, { collide: false });
-box(-2.95, -3.4, -2.46, -3.39, .6, 1.98, curtain, { collide: false, cast: false });
-box(-4.14, -0.62, -4.0, -0.25, .42, .78, M.porcelain, { collide: false });
-// ---------- fireplace: white tile column on the back wall between the glass and the slider ----------
-box(1.35, 5.29, 2.35, 5.32, 0, EAVE, M.subway, { collide: false, cast: false });
-box(1.45, 5.0, 2.25, 5.29, 0.15, 0.7, M.black);
-box(1.3, 4.8, 2.4, 5.32, 0, 0.05, M.black, { collide: false });
+// ---------- master bath (front wing, x 3.2..5.8, y -6.6..-4.3): tub under the high window, vanity + toilet on the south wall ----------
+box(3.26, -5.08, 4.9, -4.36, 0, .55, M.porcelain);
+quad(P(3.26, .55, -5.08), P(4.9, .55, -5.08), P(4.9, 1.95, -5.08), P(3.26, 1.95, -5.08), M.subway, { u: new THREE.Vector3(1, 0, 0), v: new THREE.Vector3(0, 1, 0) });
+box(4.2, -6.54, 4.95, -5.95, 0, .84, M.darkVanity);
+box(4.18, -6.54, 4.97, -5.9, .84, .88, M.granite, { collide: false });
+box(5.15, -6.54, 5.5, -6.35, .3, .75, M.porcelain); box(5.13, -6.35, 5.52, -5.95, .3, .42, M.porcelain);
+box(5.15, -6.54, 5.5, -6.4, .42, .78, M.porcelain, { collide: false });
+box(3.26, -4.72, 3.36, -4.66, 1.85, 1.9, chrome, { collide: false }); box(3.33, -4.73, 3.41, -4.65, 1.78, 1.86, chrome, { collide: false });
+box(3.26, -5.1, 4.9, -5.07, 1.98, 2.0, chrome, { collide: false });
+box(4.4, -5.09, 4.9, -5.08, .6, 1.98, curtain, { collide: false, cast: false });
+// ---------- hall bath (x -3.1..-1.3, y -4.2..0): tub on the south wall, wood vanity on the west ----------
+box(-3.04, -4.14, -1.36, -3.4, 0, .55, M.porcelain);
+quad(P(-3.04, .55, -3.4), P(-1.36, .55, -3.4), P(-1.36, 1.95, -3.4), P(-3.04, 1.95, -3.4), M.subway, { u: new THREE.Vector3(1, 0, 0), v: new THREE.Vector3(0, 1, 0) });
+box(-3.04, -2.0, -2.5, -1.1, 0, .84, M.woodVanity);
+box(-3.05, -2.02, -2.45, -1.08, .84, .88, M.whiteMarble, { collide: false });
+box(-3.04, -0.6, -2.65, -0.25, .3, .75, M.porcelain);
+box(-3.04, -0.62, -2.9, -0.25, .42, .78, M.porcelain, { collide: false });
+box(-3.04, -3.82, -2.9, -3.72, 1.85, 1.9, chrome, { collide: false }); box(-2.94, -3.81, -2.86, -3.73, 1.78, 1.86, chrome, { collide: false });
+box(-3.04, -3.41, -1.36, -3.38, 1.98, 2.0, chrome, { collide: false });
+box(-1.85, -3.4, -1.36, -3.39, .6, 1.98, curtain, { collide: false, cast: false });
+// ---------- fireplace: white tile panel at the NW corner of the living room, next to the glass ----------
+box(2.48, 5.29, 3.4, 5.32, 0, hMain(0, 5.3), M.subway, { collide: false, cast: false });
+box(2.55, 5.0, 3.3, 5.29, 0.15, 0.7, M.black);
+box(2.48, 4.8, 3.45, 5.32, 0, 0.05, M.black, { collide: false });
 // mini-split heads
-box(4.0, -11.5, 5.0, -11.3, 2.1, 2.38, M.white, { collide: false });
+box(4.3, -11.5, 5.3, -11.3, 2.1, 2.38, M.white, { collide: false });
 box(-6.0, -0.1, -5.0, -0.06, 2.0, 2.28, M.white, { collide: false });
 // front door (red outside, open into entry)
-const fd = new THREE.Group(); fd.position.copy(P(-0.2, 0, -4.2));
-const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 0.05), [M.woodDoor, M.woodDoor, M.woodDoor, M.woodDoor, M.redDoor, M.woodDoor]);
+const fd = new THREE.Group(); fd.position.copy(P(-0.1, 0, -4.2));
+const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 0.05), [M.woodDoor, M.woodDoor, M.woodDoor, M.woodDoor, M.woodDoor, M.woodDoor]);
 leaf.position.set(0.45, 1.05, 0); leaf.castShadow = true; fd.add(leaf); fd.rotation.y = -1.25; groups.house.add(fd);
+// the red door: mudroom -> side yard, next to the bench
+box(0.99, -9.6, 1.02, -8.7, 0, 2.1, M.redDoor, { collide: false });
 // interior lights (no shadows)
-for (const [x, y, i] of [[1.8, 2.5, 5], [4.5, -2.6, 4], [5.5, 2.6, 3], [-3.6, 0.6, 2], [-5.6, 3.3, 3], [-2.1, 3.3, 2.5], [-5.8, -2.1, 2.5], [-3.3, -2.1, 1.5], [4.0, -5.4, 2], [5.2, -9.0, 3], [2.3, -7.8, 1.5], [0.3, -3.2, 2]]) {
+for (const [x, y, i] of [[4.6, 2.6, 5], [2.6, -2.4, 4], [5.7, -2.1, 3], [0.8, 1.3, 2], [-2.4, 0.6, 2], [-5.6, 3.3, 3], [-2.2, 3.3, 2.5], [-5.3, -2.1, 2.5], [-2.2, -2.1, 1.5], [2.15, -5.3, 2], [2.15, -8.4, 2], [5.1, -9.2, 3], [4.5, -5.5, 1.5], [0.3, -3.2, 2]]) {
   lightSpots.push({ p: P(x, 2.25, y), i: i * 0.9, c: 0xffc896, d: 7 });
 }
 
@@ -951,48 +970,51 @@ function diningTable(x, y, rot) {
 function desk(x, y, rot) { const g = furn(x, y, rot); part(g, 0, .3, 1.3, .6, .72, .03, F.whiteLam); for (const lx of [-.5, .5]) part(g, lx, .3, .36, .58, 0, .72, F.whiteLam); chair(g, 0, .85, Math.PI); tableLamp(g, .5, .15, .75); return solid(g); }
 function rug(x1, y1, x2, y2) { flatRect(x1, y1, x2, y2, 0.008, F.rug); }
 
-// Living room: TV wall on the west, sofa facing it, bookcases by the hall, armchair by the fireplace
-rug(0.2, 1.2, 3.2, 3.6);
-tvBench(-0.53, 2.3, ROT.E);
-sofa(3.55, 2.4, ROT.W);
-coffeeTable(1.65, 2.4, ROT.W);
-armchair(0.3, 4.1, ROT.E - 0.4);
-floorLamp(3.7, 3.9);
-floorLamp(0.0, 1.35);
-bookcase(-0.46, -1.55, ROT.E); bookcase(-0.46, -0.72, ROT.E);
-// Dining
-diningTable(5.6, 2.6, 0);
-{ const h = hMain(5.6, 2.6); box(5.596, 2.596, 5.604, 2.604, 1.95, h, M.black, { collide: false, cast: false, parent: groups.overhead });
-  const sh = new THREE.Mesh(new THREE.SphereGeometry(.22, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), F.shade); sh.position.copy(P(5.6, 1.72, 2.6)); groups.overhead.add(sh); }
+// Living room: sofa facing the TV on the block wall, armchair by the fireplace, bookcases on the kitchen wall
+rug(3.2, 1.2, 6.2, 4.2);
+sofa(2.85, 2.7, ROT.E);
+coffeeTable(4.45, 2.7, ROT.E);
+tvBench(6.86, 2.7, ROT.W);
+armchair(3.4, 4.55, ROT.E + 0.6);
+floorLamp(2.75, 1.25);
+floorLamp(6.6, 4.95);
+bookcase(3.0, 0.07, ROT.N); bookcase(3.85, 0.07, ROT.N);
+bookcase(-0.46, 1.9, ROT.E);
+// Dining, next to the peninsula
+diningTable(5.7, -2.1, 0);
+{ const h = hMain(5.7, -2.1); box(5.696, -2.104, 5.704, -2.096, 1.95, h, M.black, { collide: false, cast: false, parent: groups.overhead });
+  const sh = new THREE.Mesh(new THREE.SphereGeometry(.22, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), F.shade); sh.position.copy(P(5.7, 1.72, -2.1)); groups.overhead.add(sh); }
 // Bedrooms – full beds
-bed(-5.85, 1.26, ROT.N, F.duvets[0]);                 // primary: headboard on hall wall, facing the slider
+bed(3.26, -9.3, ROT.E, F.duvets[0]);                  // master (front wing), headboard on the mudroom wall, facing the patio glass
+desk(5.9, -11.5, ROT.N);
+bed(-7.34, -2.1, ROT.E, F.duvets[2]);                 // wide bedroom off the hall, west wall
+bed(-5.6, 1.26, ROT.N, F.duvets[1]);                  // NW bedroom, facing the slider
 floorLamp(-7.1, 5.0);
-bed(-3.54, 3.6, ROT.E, F.duvets[1]);                  // bedroom 2
-bed(-7.34, -2.0, ROT.E, F.duvets[2]);                 // bedroom / office
-bed(3.46, -8.4, ROT.E, F.duvets[3]);                  // bedroom 1 (front wing), headboard on the west wall
-desk(5.6, -11.5, ROT.N);                               // desk under the south window
+bed(-3.74, 3.4, ROT.E, F.duvets[3]);                  // NE bedroom
 
 // ================= ROOMS =================
 const ROOMS = [
-  { name: 'Kitchen', r: [[1.2, -4.2, 7.0, -0.8]], photo: 'kitchen', note: 'Stainless counters · gas range · heated floor', spot: [3.3, -2.4, -0.9] },
-  { name: 'Entry', r: [[-0.6, -4.2, 1.2, -2.2]], photo: 'entry', spot: [0.3, -3.6, 0] },
-  { name: 'Living room', r: [[-0.6, -2.2, 4.2, 5.4]], photo: 'living', note: 'Fireplace · walls of glass to the deck', spot: [3.9, 0.2, 0.75] },
-  { name: 'Dining', r: [[4.2, -0.8, 7.0, 5.4]], photo: 'fireplace', note: 'Seats six', spot: [5.6, 0.0, 0.2] },
-  { name: 'Hallway', r: [[-7.4, 0.0, -0.6, 1.2]], photo: 'hall', spot: [-1.2, 0.6, 1.57] },
-  { name: 'Bedroom 3', r: [[-7.4, -4.2, -4.2, 0.0]], photo: 'bed3', note: '≈145 sq ft · mini-split', spot: [-4.7, -0.6, 2.2] },
-  { name: 'Bathroom 1', r: [[-4.2, -4.2, -2.4, 0.0]], photo: 'bath2', note: '≈81 sq ft · full bath · overhead heat', spot: [-3.3, -0.5, 3.14] },
-  { name: 'Closet', r: [[-2.4, -4.2, -0.6, 0.0]], photo: 'closet', hide: true },
-  { name: 'Bedroom 2', r: [[-7.4, 1.2, -3.6, 5.4]], photo: 'primary', note: '≈172 sq ft · slider to the backyard', spot: [-4.1, 4.8, 2.5] },
-  { name: 'Bedroom 4', r: [[-3.6, 1.2, -0.6, 5.4]], photo: 'bed2', note: '≈136 sq ft', spot: [-1.0, 1.7, 0.9] },
-  { name: 'Laundry / pantry', r: [[1.1, -6.4, 7.0, -4.3]], photo: 'laundry', spot: [2.0, -4.0, Math.PI] },
-  { name: 'Bathroom 2', r: [[1.1, -9.2, 3.4, -6.4]], photo: 'bath1', note: '≈69 sq ft · full bath · heated floor', spot: [2.4, -6.7, Math.PI] },
-  { name: 'Storage', r: [[1.1, -11.6, 3.4, -9.2]], hide: true },
-  { name: 'Bedroom 1', r: [[3.4, -11.6, 7.0, -6.4]], photo: 'office', note: '≈201 sq ft · mini-split · skylight', spot: [4.4, -6.9, -2.6] },
+  { name: 'Entry', r: [[-0.6, -4.2, 1.2, 0.0]], photo: 'entry', spot: [0.35, -3.6, 0] },
+  { name: 'Kitchen', r: [[1.2, -4.2, 4.4, 0.0]], photo: 'kitchen', note: 'Stainless counters · gas range · peninsula', spot: [4.0, -3.9, 0.6] },
+  { name: 'Dining', r: [[4.4, -4.3, 7.0, 0.0]], photo: 'kitchen', note: 'Opens to the living room', spot: [6.4, -3.9, 0.15] },
+  { name: 'Living room', r: [[2.4, 0.0, 7.0, 5.4], [-0.6, 0.0, 2.4, 2.6]], photo: 'living', note: 'Fireplace · glass to the deck', spot: [6.4, 0.4, 0.5] },
+  { name: 'Hallway', r: [[-7.4, 0.0, -0.6, 1.2]], photo: 'hall', spot: [-1.0, 0.6, 1.57] },
+  { name: 'Bedroom 2', r: [[-7.4, -4.2, -3.1, 0.0]], photo: 'bed3', note: '≈194 sq ft · mini-split', spot: [-3.6, -0.6, 2.2] },
+  { name: 'Bathroom 1', r: [[-3.1, -4.2, -1.3, 0.0]], photo: 'bath2', note: '≈81 sq ft · full bath', spot: [-2.2, -0.5, 3.14] },
+  { name: 'Coat closet', r: [[-1.3, -4.2, -0.6, 0.0]], photo: 'closet', hide: true },
+  { name: 'Bedroom 3', r: [[-7.4, 1.2, -3.8, 5.4]], photo: 'primary', note: '≈163 sq ft · slider to the backyard', spot: [-4.3, 1.8, 2.5] },
+  { name: 'Bedroom 4', r: [[-3.8, 1.2, -0.6, 5.4]], photo: 'bed2', note: '≈145 sq ft', spot: [-1.0, 1.7, 0.9] },
+  { name: 'Laundry / pantry', r: [[1.1, -6.2, 3.2, -4.3]], photo: 'laundry', spot: [2.0, -4.1, Math.PI] },
+  { name: 'Mudroom', r: [[1.1, -11.6, 3.2, -6.2]], photo: 'bonus', note: 'Skylight · door to the side yard', spot: [2.2, -6.0, Math.PI] },
+  { name: 'Bathroom 2', r: [[3.2, -6.6, 5.8, -4.3]], photo: 'bath1', note: '≈64 sq ft · master bath', spot: [3.5, -5.5, -2.3] },
+  { name: 'Master closet', r: [[5.8, -6.6, 7.0, -4.3]], hide: true },
+  { name: 'Bedroom 1', r: [[3.2, -11.6, 7.0, -6.6]], photo: 'office', note: 'Master · ≈204 sq ft · skylight · glass to the patio', spot: [3.5, -7.0, -2.5] },
   { name: 'Carport', r: [[7.0, -11.6, 10.6, -4.3]], outdoor: true, note: 'Covered, with skylight' },
+  { name: 'Covered deck', r: [[-0.6, 2.6, 2.4, 5.4]], photo: 'deck', outdoor: true, spot: [1.0, 3.0, 0] },
   { name: 'Deck', r: [[-3.6, 5.4, 7.6, 8.4]], photo: 'deck', outdoor: true, spot: [3.0, 8.0, Math.PI] },
   { name: 'Patio & pond', r: [[-9.6, 5.4, -3.6, 15.2]], photo: 'backyard', outdoor: true, spot: [-4.5, 9.0, 0.9] },
   { name: 'Backyard', r: [[-9.6, 5.4, 12, 15.2]], photo: 'backyard', outdoor: true, hide: true },
-  { name: 'Front walk', r: [[-1.5, -21.3, 3.4, -4.2]], photo: 'walkway', outdoor: true, spot: [0.3, -15, 0] },
+  { name: 'Front walk', r: [[-1.5, -21.3, 1.0, -4.2]], photo: 'walkway', outdoor: true, spot: [0.3, -15, 0] },
   { name: 'Front yard', r: [[-60, -60, 60, 60]], photo: 'frontyard', outdoor: true, hide: true },
 ];
 const inRect = (x, y, [a, b, c, d]) => x >= a && x <= c && y >= b && y <= d;
@@ -1391,7 +1413,7 @@ applySun();
 setQuality(quality);
 tick();
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); composer.setSize(innerWidth, innerHeight); if (gtao) gtao.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight); dirty = true; });
-window.__dbg = { player, setMode, camera, flyTo, ROOMS, renderer, get mode() { return mode; } };
+window.__dbg = { player, setMode, camera, flyTo, ROOMS, renderer, orbit, scene, get mode() { return mode; } };
 </script>
 </body>
 </html>
