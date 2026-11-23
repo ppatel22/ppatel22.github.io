@@ -127,11 +127,20 @@
   <button id="tRooms" data-tip="Rooms (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
   <button id="tPhoto" data-tip="Real photo (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2.5h6L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
   <button id="tMap" class="on" data-tip="Minimap (M)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
+  <button id="tSun" data-tip="Sun &amp; lights (L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
   <button id="tSet" data-tip="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
   <button id="tHelp" data-tip="Controls (?)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.4"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
 </div>
 
 <div id="dRooms" class="drawer glass hidden"><h3>Jump to a room</h3><div class="rooms" id="roomList"></div></div>
+<div id="dSun" class="drawer glass hidden">
+  <h3>Sun &amp; lights</h3>
+  <div class="row" style="padding-top:0"><b id="sunTime">–</b><button id="sunPlay" style="padding:4px 10px;border-radius:8px;background:var(--glass-2)">▶ Play day</button></div>
+  <input type="range" id="sunHour" min="5" max="21.5" step="0.25" value="15.5" style="width:100%;margin:4px 0 10px">
+  <div class="seg" id="season"><button data-md="today">Today</button><button data-md="2,20">Mar</button><button data-md="5,21">Jun</button><button data-md="8,22">Sep</button><button data-md="11,21">Dec</button></div>
+  <div class="seg" id="lights"><button data-l="1" class="on">Lights on</button><button data-l="0">Sunlight only</button></div>
+  <div class="row" style="font-size:12px">Sun angle is computed for Palo Alto; shadows and skylight patches follow it.</div>
+</div>
 <div id="dSet" class="drawer glass hidden">
   <h3>Graphics</h3>
   <div class="seg" id="quality"><button data-q="low">Fast</button><button data-q="mid">Balanced</button><button data-q="high">Beautiful</button></div>
@@ -158,6 +167,7 @@
     <span><kbd>R</kbd></span><span>rooms</span>
     <span><kbd>P</kbd></span><span>real photo of this room</span>
     <span><kbd>M</kbd></span><span>minimap (click it to teleport)</span>
+    <span><kbd>L</kbd></span><span>lights on / sunlight only</span>
   </div>
 </div>
 
@@ -202,7 +212,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = THREE.AgXToneMapping; // softer highlight roll-off than ACES, less 'CG white'
 renderer.toneMappingExposure = 1.05;
 
 
@@ -276,16 +286,19 @@ function pbr(id, metersPerTile, o = {}) {
   return m;
 }
 const M = {
-  wall: (() => { const m = pbr('white_plaster_02', 2.0, { color: 0xf3eee4, ns: 0.25, roughness: .95 }); m.map = null; return m; })(),
+  wall: (() => { const m = pbr('white_plaster_02', 2.0, { color: 0xece2d0, ns: 0.25, roughness: .95 }); m.map = null; return m; })(),
   wallWarm: std({ color: 0xe6ddcd, roughness: .92 }),
   ext: pbr('white_planks_clean', 2.4, { color: 0x5a5f5b, side: THREE.DoubleSide, ns: 1.2 }),
   panel: pbr('brown_planks_05', 2.0, { color: 0xc89a72, ns: 0.8 }),
-  floor: pbr('wood_floor', 2.2, { color: 0xa64a30, roughness: 0.7, ns: 0.6, physical: { clearcoat: 0.55, clearcoatRoughness: 0.18 } }),
+  floor: pbr('wood_floor', 2.2, { color: 0x9c4630, roughness: 0.8, ns: 0.6, physical: { clearcoat: 0.3, clearcoatRoughness: 0.3 } }),
   ceiling: pbr('oak_wood_planks', 1.3, { color: 0x9a7458, rot: true, side: THREE.DoubleSide, ns: 0.8 }),
   roof: pbr('gravel_floor_02', 2.5, { color: 0x8a8a8a, side: THREE.DoubleSide }),
   fascia: std({ color: 0x23211f, roughness: .8, side: THREE.DoubleSide }),
   beam: pbr('dark_wood', 1.5, { color: 0x7a5038, ns: 0.6 }),
-  trim: std({ color: 0xf8f6f1, roughness: .35 }),
+  trim: std({ color: 0xf0e8da, roughness: .45 }),
+  block: std({ map: canvasTex(512, 1.6, (g, s) => { g.fillStyle = '#ede5d6'; g.fillRect(0, 0, s, s); const bw = s / 4, bh = s / 8;
+    for (let r = 0; r < 8; r++) for (let c = -1; c < 5; c++) { const x = c * bw + (r % 2) * bw / 2; g.fillStyle = `rgba(0,0,0,${.015 + rnd() * .03})`; g.fillRect(x + 3, r * bh + 3, bw - 6, bh - 6);
+      g.strokeStyle = 'rgba(90,75,60,.28)'; g.lineWidth = 4; g.strokeRect(x + 2, r * bh + 2, bw - 4, bh - 4); } }), roughness: .92 }),
   doorSlab: std({ color: 0xf6f4ef, roughness: .4 }),
   cabFront: std({ map: canvasTex(512, 1.0, (g, s) => { g.fillStyle = '#f4f2ed'; g.fillRect(0, 0, s, s); for (let i = 0; i < 2; i++) { const x0 = i * s / 2; g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 3; g.strokeRect(x0 + 3, 3, s / 2 - 6, s - 6); g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 2; g.strokeRect(x0 + 40, 40, s / 2 - 80, s - 80); g.strokeStyle = 'rgba(255,255,255,.7)'; g.strokeRect(x0 + 43, 43, s / 2 - 86, s - 86); } }), roughness: .45 }),
   light: std({ color: 0xffffff, emissive: 0xfff0d6, emissiveIntensity: 2.5 }),
@@ -405,17 +418,19 @@ const win = (a, b, lo, hi, mull) => ({ a, b, lo, hi, type: 'win', mull });
 const XT = 0.16; // exterior wall thickness
 // South facade (front), x -7.4..1.1
 wall(-7.4, -4.2, 1.1, -4.2, { t: XT, matR: M.ext, ops: [
-  win(-6.7, -5.0, 1.0, 2.05), win(-6.7, -5.0, 2.12, 'top'),
-  win(-3.8, -2.9, 1.55, 2.1),
+  win(-7.3, -6.7, 2.12, 'top'), win(-6.7, -5.0, 1.0, 2.05), win(-6.7, -5.0, 2.12, 'top'), win(-5.0, -4.3, 2.12, 'top'),
+  win(-4.1, -2.5, 2.1, 'top', 0.8),
   door(-0.2, 0.7), win(0.72, 1.0, 0.0, 2.1), win(-0.2, 1.0, 2.12, 'top'),
 ] });
 // Kitchen <-> laundry hall (junction with front wing) – follows the wing's taller ceiling
 wall(1.1, -4.3, 7.0, -4.3, { top: hWing, leafSide: -1, ops: [door(1.5, 2.4)] });
 // North facade (back) – walls of glass
+// (clerestory glass runs between the wall top and the roof in the bedrooms; living/dining is glass + fireplace + slider)
 wall(-7.4, 5.4, 7.0, 5.4, { t: XT, matL: M.ext, ops: [
-  win(-7.2, -6.5, 2.1, 'top'), door(-6.4, -4.7, 2.1), win(-6.4, -4.7, 2.1, 'top'), win(-4.7, -3.8, 2.1, 'top'),
-  win(-3.0, -1.3, 0.9, 2.1), win(-3.0, -1.3, 2.15, 'top'),
-  win(-0.4, 3.0, 0, 'top', 1.2), door(3.0, 4.6, 2.2), win(3.0, 4.6, 2.2, 'top'), win(4.6, 6.85, 0, 'top', 1.1),
+  win(-7.3, -6.4, 2.1, 'top'), door(-6.4, -4.7, 2.1), win(-6.4, -4.7, 2.1, 'top'), win(-4.7, -3.7, 2.1, 'top'),
+  win(-3.5, -3.0, 2.12, 'top'), win(-3.0, -1.3, 0.9, 2.1), win(-3.0, -1.3, 2.12, 'top'), win(-1.3, -0.7, 2.12, 'top'),
+  win(-0.5, 1.35, 0, 'top', 0.9),
+  door(2.35, 4.0, 2.15), win(2.35, 4.0, 2.15, 'top'), win(4.0, 6.9, 0, 'top', 1.0),
 ] });
 // West gable end
 wall(-7.4, -4.2, -7.4, 5.4, { t: XT, matL: M.ext, ops: [
@@ -423,9 +438,9 @@ wall(-7.4, -4.2, -7.4, 5.4, { t: XT, matL: M.ext, ops: [
   win(1.3, 5.3, EAVE, 'top', 1.0), win(2.6, 4.4, 1.0, 2.0),
 ] });
 // East gable end
-wall(7.0, -4.3, 7.0, 5.4, { t: XT, matR: M.ext, ops: [
-  win(-3.3, -1.5, 1.05, 2.0), win(-4.1, -0.8, EAVE, 'top', 1.1),
-  win(-0.6, 5.3, 0, 'top', 1.2),
+// East wall of kitchen/living: painted concrete block with a clerestory band up to the roof (listing photo)
+wall(7.0, -4.3, 7.0, 5.4, { t: XT, matR: M.ext, mat: M.block, ops: [
+  win(-4.1, 5.3, 2.05, 'top', 1.2),
 ] });
 // Interior: west wall of entry/living (bedroom wing boundary)
 wall(-0.6, -4.2, -0.6, 5.4, { ops: [door(-3.5, -2.7), open(0.0, 1.2, 2.2)] });
@@ -439,7 +454,7 @@ wall(-2.4, -4.2, -2.4, 0.0);
 wall(-3.6, 1.2, -3.6, 5.4);
 
 // ================= FRONT WING  (rooms x 1.1..7.0, carport x 7.0..10.5 under the same roof; y -11.6..-4.3) =================
-wall(1.1, -11.6, 1.1, -4.3, { t: XT, top: hWing, matL: M.ext, ops: [win(-8.6, -7.2, 1.6, 2.1), win(-6.2, -4.6, 2.05, 2.42)] });
+wall(1.1, -11.6, 1.1, -4.3, { t: XT, top: hWing, matL: M.ext, ops: [win(-8.6, -7.2, 1.6, 2.05), win(-6.2, -4.6, 2.05, 2.42)] });
 wall(1.1, -11.6, 7.0, -11.6, { t: XT, top: hWing, matR: M.ext, ops: [
   win(4.3, 6.2, 1.0, 2.05), win(3.5, 6.9, 2.36, 'top', 1.2),
 ] });
@@ -535,13 +550,29 @@ flatRect(-0.55, -4.15, 1.15, -3.5, 0.006, std({ color: 0x8a4a2a, roughness: .9 }
 
 // ---------- ceilings + roofs ----------
 const RT = 0.24; // roof thickness above ceiling
+// skylights seen in the listing photos: bedroom 1, the carport, the bedroom hall
+const SKYLIGHTS = [[5.2, -9.0, 0.8, 1.2, 'wing'], [8.9, -8.0, 0.8, 1.4, 'wing'], [-4.0, 0.6, 0.7, 0.9, 'main']];
+const casterMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+// invisible roof shadow-caster with holes at the skylights, so sunlight lands inside
+function roofCaster(corners, hFn) {
+  const xs = corners.map(c => c[0]), ys = corners.map(c => c[1]);
+  const [x1, x2, y1, y2] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const sh = new THREE.Shape([new THREE.Vector2(x1, y1), new THREE.Vector2(x2, y1), new THREE.Vector2(x2, y2), new THREE.Vector2(x1, y2)]);
+  for (const [x, y, w, l] of SKYLIGHTS) if (x - w / 2 > x1 && x + w / 2 < x2 && y - l / 2 > y1 && y + l / 2 < y2)
+    sh.holes.push(new THREE.Path([new THREE.Vector2(x - w / 2, y - l / 2), new THREE.Vector2(x - w / 2, y + l / 2), new THREE.Vector2(x + w / 2, y + l / 2), new THREE.Vector2(x + w / 2, y - l / 2)]));
+  const g = new THREE.ShapeGeometry(sh); const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i); pos.setXYZ(i, x, hFn(x, y) + RT / 2, -y); }
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, casterMat); m.castShadow = true; m.receiveShadow = false; m.userData.keep = true; scene.add(m);
+}
 function slopedRoof(corners, hFn) {
   // corners: [[x,y]...] 4 in plan; build ceiling (underside) and roof (top), plus fascia along all edges
   const c = corners.map(([x, y]) => P(x, hFn(x, y), y));
   const r = corners.map(([x, y]) => P(x, hFn(x, y) + RT, y));
   quad(c[0], c[1], c[2], c[3], M.ceiling, { parent: groups.overhead });
-  quad(r[0], r[1], r[2], r[3], M.roof, { parent: groups.overhead, cast: true });
-  for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; quad(c[i], c[j], r[j], r[i], M.fascia, { parent: groups.overhead, cast: true }); }
+  quad(r[0], r[1], r[2], r[3], M.roof, { parent: groups.overhead, cast: false });
+  for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; quad(c[i], c[j], r[j], r[i], M.fascia, { parent: groups.overhead, cast: false }); }
+  roofCaster(corners, hFn);
 }
 // main block (ridge E-W at y=0.6), overhang ~1m
 slopedRoof([[-8.4, 0.6], [8.0, 0.6], [8.0, 6.4], [-8.4, 6.4]], hMain);
@@ -566,8 +597,7 @@ beam(P(5.8, hWing(5.8, 0) - .12, -12.6), P(5.8, hWing(5.8, 0) - .12, -4.3), 0.16
 
 // skylights (bedroom 1, carport, hall, bath1)
 function skylight(x, y, w, l, hFn) { const h = hFn(x, y) - 0.02; box(x - w / 2, y - l / 2, x + w / 2, y + l / 2, h - 0.03, h, M.sky, { collide: false, cast: false, parent: groups.overhead }); }
-skylight(5.2, -9.0, 0.8, 1.2, hWing); skylight(8.9, -8.0, 0.8, 1.4, hWing); skylight(2.3, -7.8, 0.6, 0.9, hWing);
-skylight(-4.0, 0.6, 0.7, 0.9, hMain); skylight(3.6, 0.2, 0.8, 1.2, hMain);
+for (const [x, y, w, l, f] of SKYLIGHTS) skylight(x, y, w, l, f === 'wing' ? hWing : hMain);
 
 // ---------- kitchen ----------
 const CT = 0.92;
@@ -641,10 +671,10 @@ box(-4.14, -3.82, -4.0, -3.72, 1.85, 1.9, chrome, { collide: false }); box(-4.04
 box(-4.14, -3.41, -2.46, -3.38, 1.98, 2.0, chrome, { collide: false });
 box(-2.95, -3.4, -2.46, -3.39, .6, 1.98, curtain, { collide: false, cast: false });
 box(-4.14, -0.62, -4.0, -0.25, .42, .78, M.porcelain, { collide: false });
-// ---------- fireplace (living, against bedroom-wing wall) ----------
-box(-0.54, 3.3, -0.5, 5.3, 0, EAVE + .4, M.subway, { collide: false, cast: false });
-box(-0.5, 3.9, -0.22, 4.8, 0.15, 0.75, M.black);
-box(-0.5, 3.6, 0.15, 5.1, 0, 0.05, M.black, { collide: false });
+// ---------- fireplace: white tile column on the back wall between the glass and the slider ----------
+box(1.35, 5.29, 2.35, 5.32, 0, EAVE, M.subway, { collide: false, cast: false });
+box(1.45, 5.0, 2.25, 5.29, 0.15, 0.7, M.black);
+box(1.3, 4.8, 2.4, 5.32, 0, 0.05, M.black, { collide: false });
 // mini-split heads
 box(4.0, -11.5, 5.0, -11.3, 2.1, 2.38, M.white, { collide: false });
 box(-6.0, -0.1, -5.0, -0.06, 2.0, 2.28, M.white, { collide: false });
@@ -654,7 +684,7 @@ const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 0.05), [M.woodDoor, 
 leaf.position.set(0.45, 1.05, 0); leaf.castShadow = true; fd.add(leaf); fd.rotation.y = -1.25; groups.house.add(fd);
 // interior lights (no shadows)
 for (const [x, y, i] of [[1.8, 2.5, 5], [4.5, -2.6, 4], [5.5, 2.6, 3], [-3.6, 0.6, 2], [-5.6, 3.3, 3], [-2.1, 3.3, 2.5], [-5.8, -2.1, 2.5], [-3.3, -2.1, 1.5], [4.0, -5.4, 2], [5.2, -9.0, 3], [2.3, -7.8, 1.5], [0.3, -3.2, 2]]) {
-  lightSpots.push({ p: P(x, 2.25, y), i: i * 0.8, c: 0xffe2bd, d: 7 });
+  lightSpots.push({ p: P(x, 2.25, y), i: i * 0.9, c: 0xffc896, d: 7 });
 }
 
 // ================= SITE =================
@@ -730,8 +760,8 @@ for (const poly of neighbors) {
 // ---------- lighting ----------
 const hemi = new THREE.HemisphereLight(0xd4e6ff, 0x5b4a33, 1.25); scene.add(hemi);
 scene.add(new THREE.AmbientLight(0xffffff, 0.25));
-const sun = new THREE.DirectionalLight(0xfff1dc, 2.6);
-sun.position.copy(P(-24, 30, -14)); sun.target.position.copy(P(1, 0, -2)); scene.add(sun.target);
+const sun = new THREE.DirectionalLight(0xffdcae, 2.4); // late-afternoon warm sun
+sun.position.copy(P(-30, 22, -12)); sun.target.position.copy(P(1, 0, -2)); scene.add(sun.target);
 sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -20, right: 22, top: 22, bottom: -20, near: 5, far: 80 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
 scene.add(sun);
@@ -741,7 +771,66 @@ scene.add(sun);
 scene.fog = new THREE.Fog(0xd8e4ec, 45, 140);
 // image-based lighting for reflections (steel, glass, glossy floor)
 { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(renderer), 0.04).texture; scene.environmentIntensity = 0.22; }
-hemi.intensity = 0.95; renderer.toneMappingExposure = 0.92;
+// Two lighting profiles: bright daylight for the overview/outdoors, warm and dim inside (like a camera exposing for a room)
+const ambient = scene.children.find(o => o.isAmbientLight);
+const LIGHTING = {
+  out: { sky: 0xd4e6ff, ground: 0x5b4a33, hemi: 1.0, amb: 0xffffff, ambI: 0.2, env: 0.22, exp: 0.95, lamp: 1.0 },
+  in:  { sky: 0xffe2c2, ground: 0x6e4a30, hemi: 0.55, amb: 0xffd2a0, ambI: 0.08, env: 0.1, exp: 0.9, lamp: 1.9 },
+};
+let lightProfile = null, daylight = 1;
+function setLighting(k) {
+  if (k === lightProfile) return; lightProfile = k; const L = LIGHTING[k];
+  const d = daylight, on = SUN.lights;
+  hemi.color.setHex(L.sky); hemi.groundColor.setHex(L.ground); hemi.intensity = L.hemi * (0.05 + 0.95 * d);
+  ambient.color.setHex(L.amb); ambient.intensity = L.ambI * (0.15 + 0.85 * d);
+  scene.environmentIntensity = L.env * (0.15 + 0.85 * d);
+  renderer.toneMappingExposure = L.exp * (k === 'in' ? 1 + 0.35 * (1 - d) : 1);
+  lampBoost = on ? L.lamp * (1.2 - 0.4 * d) : 0;
+  M.light.emissiveIntensity = on ? 2.5 : 0; if (typeof F !== 'undefined') F.shade.emissiveIntensity = on ? 0.9 : 0.05;
+}
+let lampBoost = 1;
+
+// ================= SUN & TIME OF DAY (Palo Alto, 37.42N 122.12W) =================
+const LAT = 37.4167 * Math.PI / 180, LON = -122.1206;
+function laOffsetHours(utcMs) {
+  const p = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(utcMs));
+  const g = k => +p.find(x => x.type === k).value;
+  return (Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute')) - utcMs) / 3600000;
+}
+const localToUTC = (y, m, d, h) => { const base = Date.UTC(y, m, d) + h * 3600000; return base - laOffsetHours(base + 8 * 3600000) * 3600000; };
+function sunPos(utcMs) { // low-precision solar position (good to ~0.5 deg)
+  const r = Math.PI / 180, n = utcMs / 86400000 + 2440587.5 - 2451545.0;
+  const g = (357.529 + 0.98560028 * n) * r, q = 280.459 + 0.98564736 * n;
+  const L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * r, e = (23.439 - 0.00000036 * n) * r;
+  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L)), dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const gmst = ((18.697374558 + 24.06570982441908 * n) % 24 + 24) % 24, H = (gmst * 15 + LON) * r - ra;
+  const el = Math.asin(Math.sin(LAT) * Math.sin(dec) + Math.cos(LAT) * Math.cos(dec) * Math.cos(H));
+  const az = Math.atan2(-Math.sin(H), Math.tan(dec) * Math.cos(LAT) - Math.sin(LAT) * Math.cos(H)); // from north, clockwise
+  return { az, el };
+}
+const SUN = { month: new Date().getMonth(), day: new Date().getDate(), hours: 15.5, lights: true, play: false };
+const skyCanvas = document.createElement('canvas'); skyCanvas.width = 4; skyCanvas.height = 256;
+const skyTex = new THREE.CanvasTexture(skyCanvas); skyTex.mapping = THREE.EquirectangularReflectionMapping; skyTex.colorSpace = THREE.SRGBColorSpace; scene.background = skyTex;
+const C = h => new THREE.Color(h), mix3 = (a, b, c, t) => t < .5 ? a.clone().lerp(b, t * 2) : b.clone().lerp(c, t * 2 - 1);
+function applySun() {
+  const yr = new Date().getFullYear();
+  const { az, el } = sunPos(localToUTC(yr, SUN.month, SUN.day, SUN.hours));
+  const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
+  sun.position.copy(sun.target.position).addScaledVector(dir, 45);
+  const ss = THREE.MathUtils.smoothstep;
+  daylight = ss(el, -0.12, 0.22);
+  const high = ss(el, 0.02, 0.5);
+  sun.intensity = 2.7 * ss(el, -0.01, 0.1);
+  sun.color.copy(C(0xff9248).lerp(C(0xfff1de), high));
+  // sky gradient: night -> sunset -> day
+  const tt = daylight, top = mix3(C(0x0a0f1e), C(0x44598c), C(0x5f97d6), tt), hor = mix3(C(0x1a2132), C(0xf0a066), C(0xd6e6f2), Math.min(1, tt * 0.6 + high * 0.4));
+  const gx = skyCanvas.getContext('2d'), gr = gx.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, '#' + top.getHexString()); gr.addColorStop(.49, '#' + hor.getHexString()); gr.addColorStop(.52, '#' + hor.clone().lerp(C(0x7d8a74), .3).getHexString()); gr.addColorStop(1, '#4a5442');
+  gx.fillStyle = gr; gx.fillRect(0, 0, 4, 256); skyTex.needsUpdate = true; scene.fog.color.copy(hor);
+  renderer.shadowMap.needsUpdate = true; lightProfile = null;
+  const hh = Math.floor(SUN.hours), mm = Math.round((SUN.hours - hh) * 60);
+  const lbl = document.getElementById('sunTime'); if (lbl) lbl.textContent = `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'} · ${new Date(yr, SUN.month, SUN.day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · sun ${Math.round(el * 180 / Math.PI)}°`;
+}
 // post-processing: ambient occlusion (desktop only)
 const lowPower = matchMedia('(pointer: coarse)').matches;
 const composer = new EffectComposer(renderer);
@@ -765,7 +854,7 @@ const F = {
   duvets: ['#9aa7b4', '#c8b9a2', '#8f9a86', '#b59b9b'].map(c => std({ map: fabricTex(c, .2), roughness: 1 })),
   rug: std({ map: canvasTex(512, 2.0, (g, s) => { g.fillStyle = '#d9d2c3'; g.fillRect(0, 0, s, s); g.strokeStyle = '#7f7466'; g.lineWidth = 10; g.strokeRect(24, 24, s - 48, s - 48); g.lineWidth = 3; for (let i = 0; i < 8; i++) { g.beginPath(); g.moveTo(0, i * s / 8 + 32); g.lineTo(s, i * s / 8 - 32); g.stroke(); } for (let i = 0; i < 4000; i++) { g.fillStyle = `rgba(0,0,0,${rnd() * .05})`; g.fillRect(rnd() * s, rnd() * s, 2, 2); } }), roughness: 1 }),
   screen: std({ color: 0x050607, roughness: .08, metalness: .3 }),
-  shade: std({ color: 0xf3ead8, emissive: 0xffd9a0, emissiveIntensity: .55, roughness: .9, side: THREE.DoubleSide }),
+  shade: std({ color: 0xf3e4c8, emissive: 0xffb469, emissiveIntensity: .9, roughness: .9, side: THREE.DoubleSide }),
   metalBlack: std({ color: 0x1c1c1c, roughness: .35, metalness: .7 }),
 };
 function furn(x, y, rot) { const g = new THREE.Group(); g.position.copy(P(x, 0, y)); g.rotation.y = rot; groups.house.add(g); return g; }
@@ -776,7 +865,7 @@ function part(g, lx, ly, w, d, z0, h, mat, r = 0) {
 }
 function solid(g) { g.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(g); addCol(b.min.x, -b.max.z, b.max.x, -b.min.z); return g; }
 const ROT = { N: 0, E: -Math.PI / 2, W: Math.PI / 2, S: Math.PI };
-function lampLight(g, lx, ly, z, i = 1.2) { lightSpots.push({ obj: g, local: new THREE.Vector3(lx, z, -ly), i: i * 1.4, c: 0xffc98a, d: 5 }); }
+function lampLight(g, lx, ly, z, i = 1.2) { lightSpots.push({ obj: g, local: new THREE.Vector3(lx, z, -ly), i: i * 1.8, c: 0xffb468, d: 5 }); }
 function tableLamp(g, lx, ly, z0) {
   part(g, lx, ly, .12, .12, z0, .02, F.metalBlack); part(g, lx, ly, .02, .02, z0, .3, F.metalBlack);
   const sh = new THREE.Mesh(new THREE.CylinderGeometry(.11, .14, .2, 24, 1, true), F.shade); sh.position.set(lx, z0 + .36, -ly); g.add(sh);
@@ -867,7 +956,7 @@ rug(0.2, 1.2, 3.2, 3.6);
 tvBench(-0.53, 2.3, ROT.E);
 sofa(3.55, 2.4, ROT.W);
 coffeeTable(1.65, 2.4, ROT.W);
-armchair(1.2, 4.85, ROT.S - 0.5);
+armchair(0.3, 4.1, ROT.E - 0.4);
 floorLamp(3.7, 3.9);
 floorLamp(0.0, 1.35);
 bookcase(-0.46, -1.55, ROT.E); bookcase(-0.46, -0.72, ROT.E);
@@ -942,7 +1031,7 @@ console.info(`meshes: ${drawBefore} -> ${drawAfter}`);
 
 renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true; // the sun never moves: render shadows once
 
-const POOL = 4;
+const POOL = 6;
 const pool = Array.from({ length: POOL }, () => { const l = new THREE.PointLight(0xffd7a8, 0, 6, 1.7); scene.add(l); return l; });
 let poolSize = POOL;
 function updateLightPool() {
@@ -951,7 +1040,7 @@ function updateLightPool() {
   pool.forEach((l, i) => {
     const e = near[i]; if (!e || i >= poolSize || mode === 'over') { l.intensity = 0; return; }
     const [s, d2] = e; l.position.copy(s.p); l.color.setHex(s.c); l.distance = s.d;
-    l.intensity = s.i * Math.max(0, Math.min(1, (40 - d2) / 25)); // fade far ones so swaps are invisible
+    l.intensity = s.i * lampBoost * Math.max(0, Math.min(1, (40 - d2) / 25)); // fade far ones so swaps are invisible
   });
 }
 
@@ -966,9 +1055,9 @@ function setCut(on) { cutPlane.constant = on ? 1.45 : 1e5; renderer.shadowMap.ne
 
 // ================= QUALITY =================
 const QUALITY = {
-  low: { pr: 1, ao: false, lights: 2, aa: false },
-  mid: { pr: Math.min(devicePixelRatio, 1.5), ao: false, lights: 4, aa: true },
-  high: { pr: Math.min(devicePixelRatio, 2), ao: true, lights: 4, aa: true },
+  low: { pr: 1, ao: false, aoIdle: false, lights: 3, aa: false },
+  mid: { pr: Math.min(devicePixelRatio, 1.5), ao: false, aoIdle: true, lights: 6, aa: true },
+  high: { pr: Math.min(devicePixelRatio, 2), ao: true, aoIdle: true, lights: 6, aa: true },
 };
 const isTouch = matchMedia('(pointer: coarse)').matches;
 let quality = isTouch ? 'low' : 'mid';
@@ -1001,7 +1090,16 @@ for (const R of ROOMS.filter(R => !R.hide)) {
   b.innerHTML = `<div class="thumb" style="background-image:url(photos/${R.photo}.jpg)"></div><div class="nm">${R.name}</div>`;
   b.onclick = () => { (mode === 'over' ? focusRoom : flyTo)(R); closeDrawers(); }; R.btn = b; list.appendChild(b);
 }
-const drawers = { tRooms: 'dRooms', tSet: 'dSet', tHelp: 'dHelp' };
+const drawers = { tRooms: 'dRooms', tSun: 'dSun', tSet: 'dSet', tHelp: 'dHelp' };
+function sunChanged() { applySun(); dirty = true; }
+$('sunHour').oninput = e => { SUN.hours = +e.target.value; SUN.play = false; $('sunPlay').textContent = '▶ Play day'; sunChanged(); };
+$('sunPlay').onclick = () => { SUN.play = !SUN.play; $('sunPlay').textContent = SUN.play ? '❚❚ Pause' : '▶ Play day'; };
+document.querySelectorAll('#season button').forEach(b => b.onclick = () => {
+  const now = new Date(); const [m, d] = b.dataset.md === 'today' ? [now.getMonth(), now.getDate()] : b.dataset.md.split(',').map(Number);
+  SUN.month = m; SUN.day = d; document.querySelectorAll('#season button').forEach(x => x.classList.toggle('on', x === b)); sunChanged(); });
+function setLights(on) { SUN.lights = on; document.querySelectorAll('#lights button').forEach(x => x.classList.toggle('on', (x.dataset.l === '1') === on)); lightProfile = null; dirty = true; }
+document.querySelectorAll('#lights button').forEach(b => b.onclick = () => setLights(b.dataset.l === '1'));
+document.querySelector('#season button').classList.add('on');
 function closeDrawers(except) { for (const [t, d] of Object.entries(drawers)) if (t !== except) { $(d).classList.add('hidden'); $(t).classList.remove('on'); } }
 for (const [t, d] of Object.entries(drawers)) $(t).onclick = () => { const open = $(d).classList.contains('hidden'); closeDrawers(); $(d).classList.toggle('hidden', !open); $(t).classList.toggle('on', open); };
 $('tView').onclick = () => setMode(mode === 'over' ? 'walk' : 'over');
@@ -1143,6 +1241,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyR') $('tRooms').click();
   if (e.code === 'KeyM') $('tMap').click();
   if (e.code === 'KeyC') $('tCut').click();
+  if (e.code === 'KeyL') setLights(!SUN.lights);
   if (e.code === 'KeyF') setMode(mode === 'over' ? 'walk' : 'over');
   if (e.code === 'Escape') { hidePhoto(); closeDrawers(); }
   if (/^(Key[WASD]|Arrow)/.test(e.code)) walkTarget = null;
@@ -1213,10 +1312,12 @@ mc.addEventListener('click', e => {
 
 // ================= LOOP =================
 const clock = new THREE.Clock();
+let aoDone = false, lastDirty = 0;
 let fpsN = 0, fpsT = 0, lowStreak = 0, lastCam = new THREE.Matrix4();
 function tick() {
   requestAnimationFrame(tick);
   const dt = Math.min(clock.getDelta(), 0.05);
+  if (SUN.play) { SUN.hours += dt * 1.2; if (SUN.hours > 21.5) SUN.hours = 5; $('sunHour').value = SUN.hours; sunChanged(); }
   if (fly) {
     fly.t += dt / fly.dur; const k = ease(Math.min(1, fly.t));
     camera.position.lerpVectors(fly.from, fly.to, k); camera.quaternion.slerpQuaternions(fly.fromQ, fly.toQ, k);
@@ -1261,9 +1362,16 @@ function tick() {
     ROOMS.forEach(Q => Q.btn && Q.btn.classList.toggle('cur', Q === R));
   }
   if (!$('map').classList.contains('hidden')) drawMap();
+  setLighting(mode === 'walk' && !fly && currentRoom && !currentRoom.outdoor ? 'in' : 'out');
+  const now = performance.now();
+  if (!dirty && gtao && QUALITY[quality].aoIdle && !aoDone && now - lastDirty > 220) {
+    gtao.enabled = true; composer.render(); aoDone = true; // soft contact shadows "settle in" once the camera stops
+  }
   if (dirty) {
     updateLightPool();
+    if (gtao) gtao.enabled = QUALITY[quality].ao;
     composer.render(); if (mode === 'over' || fly) labelRenderer.render(scene, camera);
+    aoDone = !!(gtao && gtao.enabled); lastDirty = now;
     dirty = false;
     // fps + auto quality (only measured while actually rendering)
     fpsN++; fpsT += dt;
@@ -1279,6 +1387,7 @@ function tick() {
 }
 // initial camera: hero shot of the house for the intro screen
 camera.position.copy(P(9, 17, -21)); camera.lookAt(P(1.5, 0, -2.5));
+applySun();
 setQuality(quality);
 tick();
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); composer.setSize(innerWidth, innerHeight); if (gtao) gtao.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight); dirty = true; });
