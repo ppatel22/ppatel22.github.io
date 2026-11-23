@@ -62,6 +62,10 @@
   .fslot { display:flex; justify-content:space-between; gap:8px; width:100%; text-align:left; padding:7px 8px; border-radius:8px; font-size:13px; color:var(--muted); }
   .fslot:hover { background:var(--glass-2); color:var(--text); } .fslot b { color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%; }
   .fslot.reset { margin-top:10px; justify-content:center; border:1px solid var(--glass-2); }
+  .fmove { display:flex; align-items:center; gap:6px; margin:0 0 10px; flex-wrap:wrap; }
+  .fmove button { padding:5px 10px; border-radius:8px; background:var(--glass-2); font-size:13px; } .fmove button:disabled { opacity:.4; cursor:default; }
+  .fmove span { font-size:11px; color:var(--muted); margin-left:auto; }
+  canvas#gl.moving { cursor:move; }
   .fback { padding:4px 8px; margin:0 0 8px; border-radius:8px; background:var(--glass-2); font-size:12px; }
   .fgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .fitem { text-align:left; border-radius:10px; overflow:hidden; background:var(--glass-2); border:1px solid transparent; padding-bottom:6px; }
@@ -173,6 +177,7 @@
     <span><kbd>Q</kbd><kbd>E</kbd></span><span>rotate</span>
     <span>Click a label · double-click floor</span><span>focus there</span>
     <span>Click a piece · <kbd>I</kbd></span><span>swap furniture (IKEA)</span>
+    <span>Drag selected piece · <kbd>,</kbd><kbd>.</kbd></span><span>move · rotate</span>
     <span><kbd>C</kbd></span><span>cutaway walls on/off</span>
     <span><b>Walk</b></span><span></span>
     <span>Drag</span><span>look around</span>
@@ -1044,6 +1049,9 @@ slot('b4-dresser', 'dresser', 'Bedroom 4 · dresser', -0.66, 2.1, ROT.W, () => d
 
 // slot colliders: one box per piece (rebuilt when a piece is swapped)
 function slotCols(S) { S.outer.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(S.inner); if (b.isEmpty()) return []; return [{ x1: b.min.x, y1: -b.max.z, x2: b.max.x, y2: -b.min.z }]; }
+const LAYOUT_KEY = 'lindero-layout-v1';
+const loadLayout = () => { try { return JSON.parse(localStorage.getItem(LAYOUT_KEY)) || {}; } catch { return {}; } };
+for (const S of SLOTS) { S.home = [S.x, S.y, S.rot]; const l = loadLayout()[S.key]; if (l) { [S.x, S.y, S.rot] = l; S.outer.position.copy(P(S.x, 0, S.y)); S.outer.rotation.y = S.rot; } }
 for (const S of SLOTS) if (!S.noCol) { S.cols = slotCols(S); colliders.push(...S.cols); }
 
 // ================= ROOMS =================
@@ -1321,6 +1329,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyL') setLights(!SUN.lights);
   if (e.code === 'KeyF') setMode(mode === 'over' ? 'walk' : 'over');
   if (e.code === 'KeyI') $('tFurn').click();
+  if ((e.code === 'Comma' || e.code === 'Period') && selSlot) rotatePiece(selSlot, e.code === 'Comma' ? 1 : -1, e.shiftKey ? 12 : 4);
   if (e.code === 'Escape') { hidePhoto(); closeDrawers(); selRing.visible = false; selSlot = null; dirty = true; }
   if (/^(Key[WASD]|Arrow)/.test(e.code)) walkTarget = null;
 });
@@ -1392,7 +1401,7 @@ async function setPiece(S, id, persist = true) {
     if (S.cat === 'bed') addBedding(S, obj, b.clone().translate(obj.position));
   }
   S.outer.traverse(m => { if (m.isMesh) m.userData.keep = true; });
-  regrid(S, slotCols(S));
+  regrid(S, slotCols(S)); S.foot = null; if (selSlot === S) placeRing(S);
   S.loading = false; if (persist) saveChoice(S.key, id);
   renderer.shadowMap.needsUpdate = true; dirty = true; renderFurn();
 }
@@ -1413,12 +1422,12 @@ function restoreFurniture() { const c = loadChoices(); for (const S of SLOTS) if
 const selRing = new THREE.Mesh(new THREE.RingGeometry(.55, .62, 48), new THREE.MeshBasicMaterial({ color: 0xff7a45, transparent: true, opacity: .9, depthTest: false }));
 selRing.rotation.x = -Math.PI / 2; selRing.renderOrder = 10; selRing.visible = false; scene.add(selRing);
 let selSlot = null, furnFilter = null;
+function placeRing(S) { S.outer.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(S.inner), c = b.isEmpty() ? S.outer.position : b.getCenter(new THREE.Vector3());
+  const r = b.isEmpty() ? .6 : Math.max(.45, Math.hypot(b.max.x - b.min.x, b.max.z - b.min.z) / 2 + .1);
+  selRing.scale.setScalar(r / .6); selRing.position.set(c.x, 0.03, c.z); selRing.visible = true; }
 function selectSlot(S, fly = true) {
   selSlot = S; furnFilter = null;
-  if (S) { S.outer.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(S.inner), c = b.isEmpty() ? S.outer.position : b.getCenter(new THREE.Vector3());
-    const r = b.isEmpty() ? .6 : Math.max(.45, Math.hypot(b.max.x - b.min.x, b.max.z - b.min.z) / 2 + .1);
-    selRing.scale.setScalar(r / .6); selRing.position.set(c.x, 0.03, c.z); selRing.visible = true;
-    if (fly && mode === 'over') focusRoom(roomAt(S.x, S.y), [S.x, S.y]); }
+  if (S) { placeRing(S); if (fly && mode === 'over') focusRoom(roomAt(S.x, S.y), [S.x, S.y]); }
   else selRing.visible = false;
   openFurn(); renderFurn(); dirty = true;
 }
@@ -1432,21 +1441,26 @@ function renderFurn() {
     el.innerHTML = (CATALOG.length ? '' : '<div class="row" style="font-size:12px">IKEA catalog not loaded yet.</div>') +
       [...byRoom].map(([r, list]) => `<div class="fgroup">${esc(r)}</div>` + list.map(S => { const it = CATALOG.find(c => c.id === S.cur);
         return `<button class="fslot" data-k="${S.key}"><span>${esc(S.label.split(' · ')[1])}</span><b>${it ? esc(it.name) : 'Default'}${S.loading ? ' …' : ''}</b></button>`; }).join('')).join('') +
-      `<button class="fslot reset" id="furnReset"><span>Reset every piece to default</span></button>`;
+      `<button class="fslot reset" id="furnReset"><span>Reset every piece and position</span></button>`;
     el.querySelectorAll('.fslot[data-k]').forEach(b => b.onclick = () => selectSlot(SLOTS.find(S => S.key === b.dataset.k)));
-    $('furnReset').onclick = () => { for (const S of SLOTS) setPiece(S, null); };
+    $('furnReset').onclick = () => { for (const S of SLOTS) { setPiece(S, null); placePiece(S, ...S.home, false); } try { localStorage.removeItem(LAYOUT_KEY); } catch {} renderFurn(); };
     $('furnTitle').textContent = 'Furniture'; return;
   }
   const cats = SLOT_CATS[selSlot.cat] || [selSlot.cat], fc = furnFilter || cats[0];
   const items = CATALOG.filter(c => c.cat === fc);
   $('furnTitle').textContent = selSlot.label;
+  const moved = selSlot.home.some((v, i) => Math.abs(v - [selSlot.x, selSlot.y, selSlot.rot][i]) > 1e-3);
   el.innerHTML = `<button class="fback" id="furnBack">← All furniture</button>` +
+    `<div class="fmove"><button id="rotL" title="Rotate left (,)">⟲</button><button id="rotR" title="Rotate right (.)">⟳</button>` +
+    `<button id="posReset" ${moved ? '' : 'disabled'}>Put back</button><span>Drag the piece to move it</span></div>` +
     (cats.length > 1 ? `<div class="seg">${cats.map(c => `<button data-c="${c}" class="${c === fc ? 'on' : ''}">${CAT_NAMES[c] || c}</button>`).join('')}</div>` : '') +
     `<div class="fgrid"><button class="fitem ${selSlot.cur ? '' : 'cur'}" data-id=""><div class="fimg def">Default</div><div class="fnm">Default piece</div></button>` +
     items.map(it => `<button class="fitem ${selSlot.cur === it.id ? 'cur' : ''}" data-id="${it.id}"><div class="fimg"><img loading="lazy" alt="" src="ikea/img/${it.id}.jpg"></div>
       <div class="fnm">${esc(it.name)}${selSlot.cur === it.id && selSlot.loading ? ' …' : ''}</div><div class="fty">${esc(it.type)}${it.size ? ' · ' + esc(it.size) : ''}</div>
       <div class="fpr">${money(it.price)} <a href="${esc(it.url)}" target="_blank" rel="noopener">IKEA ↗</a></div></button>`).join('') + `</div>`;
   $('furnBack').onclick = () => selectSlot(null);
+  $('rotL').onclick = () => rotatePiece(selSlot, 1); $('rotR').onclick = () => rotatePiece(selSlot, -1);
+  $('posReset').onclick = () => { const S = selSlot; placePiece(S, ...S.home, true); renderFurn(); };
   el.querySelectorAll('.seg button').forEach(b => b.onclick = () => { furnFilter = b.dataset.c; renderFurn(); });
   el.querySelectorAll('.fitem').forEach(b => b.onclick = e => { if (e.target.tagName === 'A') return; setPiece(selSlot, b.dataset.id || null); });
 }
@@ -1461,6 +1475,103 @@ function slotAt(cx, cy) {
   cv.addEventListener('pointerdown', e => { if (mode === 'over') down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
   cv.addEventListener('pointerup', e => { if (mode !== 'over' || !down) return; const d = Math.hypot(e.clientX - down.x, e.clientY - down.y), q = performance.now() - down.t < 350; down = null;
     if (d < 5 && q) { const S = slotAt(e.clientX, e.clientY); if (S) selectSlot(S, false); } });
+}
+
+// ---------- move & rotate pieces (Sims-style) ----------
+// Each piece's footprint is an oriented rectangle; moves are tested against the house (walls, counters, fixtures) and every
+// other piece with a 2D separating-axis test. Blocked moves slide along the obstacle and stop flush against it.
+const NO_HIT = { chair: ['dining', 'desk', 'coffee'], officechair: ['dining', 'desk'] }; // chairs tuck under tables
+function footprint(S) {
+  if (!S.foot) { const p = S.outer.position.clone(), r = S.outer.rotation.y; S.outer.position.set(0, 0, 0); S.outer.rotation.y = 0; S.outer.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(S.inner); S.outer.position.copy(p); S.outer.rotation.y = r; S.outer.updateMatrixWorld(true);
+    S.foot = b.isEmpty() ? { x1: -.2, x2: .2, z1: -.2, z2: .2 } : { x1: b.min.x, x2: b.max.x, z1: b.min.z, z2: b.max.z }; }
+  return S.foot;
+}
+function corners(S, x, y, rot, shrink = 0.015) { // plan-space corners of a piece's footprint at pose (x, y, rot)
+  const f = footprint(S), c = Math.cos(rot), s = Math.sin(rot);
+  return [[f.x1 + shrink, f.z1 + shrink], [f.x2 - shrink, f.z1 + shrink], [f.x2 - shrink, f.z2 - shrink], [f.x1 + shrink, f.z2 - shrink]]
+    .map(([lx, lz]) => [x + lx * c + lz * s, y - (-lx * s + lz * c)]);
+}
+const boxPoly = c => [[c.x1, c.y1], [c.x2, c.y1], [c.x2, c.y2], [c.x1, c.y2]];
+function polysHit(a, b) {
+  for (const poly of [a, b]) for (let i = 0; i < 4; i++) {
+    const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % 4], nx = y1 - y2, ny = x2 - x1;
+    let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+    for (const [px, py] of a) { const d = px * nx + py * ny; a0 = Math.min(a0, d); a1 = Math.max(a1, d); }
+    for (const [px, py] of b) { const d = px * nx + py * ny; b0 = Math.min(b0, d); b1 = Math.max(b1, d); }
+    if (a1 <= b0 || b1 <= a0) return false;
+  }
+  return true;
+}
+let houseCols = null;
+const staticCols = () => houseCols || (houseCols = (() => { const own = new Set(SLOTS.flatMap(S => S.cols)); return colliders.filter(c => !own.has(c)); })());
+function obstacles(S) { // what a piece may not overlap: the house, plus other pieces (rugs lie under everything)
+  const out = staticCols().map(c => ({ id: c, poly: boxPoly(c) }));
+  if (S.cat === 'rug') return out;
+  for (const T of SLOTS) { if (T === S || T.cat === 'rug' || (NO_HIT[S.cat] || []).includes(T.cat) || (NO_HIT[T.cat] || []).includes(S.cat)) continue;
+    out.push({ id: T, poly: corners(T, T.x, T.y, T.rot) }); }
+  return out;
+}
+function blockedAt(S, x, y, rot, obs, ignore) {
+  const me = corners(S, x, y, rot); let x1 = Infinity, x2 = -Infinity, y1 = Infinity, y2 = -Infinity;
+  for (const [px, py] of me) { x1 = Math.min(x1, px); x2 = Math.max(x2, px); y1 = Math.min(y1, py); y2 = Math.max(y2, py); }
+  for (const o of obs) { if (ignore.has(o.id)) continue; const p = o.poly;
+    if (Math.max(p[0][0], p[1][0], p[2][0], p[3][0]) <= x1 || Math.min(p[0][0], p[1][0], p[2][0], p[3][0]) >= x2 ||
+        Math.max(p[0][1], p[1][1], p[2][1], p[3][1]) <= y1 || Math.min(p[0][1], p[1][1], p[2][1], p[3][1]) >= y2) continue;
+    if (polysHit(me, p)) return true; }
+  return false;
+}
+// things a piece already overlaps at its current pose (e.g. default layouts tucked into a corner) don't trap it
+const overlapping = (S, obs) => new Set(obs.filter(o => polysHit(corners(S, S.x, S.y, S.rot), o.poly)).map(o => o.id));
+function placePiece(S, x, y, rot, persist = true) {
+  S.x = x; S.y = y; S.rot = rot; S.outer.position.copy(P(x, 0, y)); S.outer.rotation.y = rot;
+  regrid(S, slotCols(S)); if (selSlot === S) placeRing(S);
+  if (persist) try { const l = loadLayout(), h = S.home; if (Math.abs(x - h[0]) + Math.abs(y - h[1]) + Math.abs(rot - h[2]) < 1e-3) delete l[S.key]; else l[S.key] = [+x.toFixed(3), +y.toFixed(3), +rot.toFixed(4)];
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(l)); } catch {}
+  renderer.shadowMap.needsUpdate = true; dirty = true;
+}
+function flashBlocked() { selRing.material.color.set(0xe0533f); dirty = true; clearTimeout(flashBlocked.t); flashBlocked.t = setTimeout(() => { selRing.material.color.set(0xff7a45); dirty = true; }, 260); }
+function rotatePiece(S, dir, steps = 4) { // steps per quarter turn: 4 → 22.5°, 12 → 7.5° (shift)
+  if (!S) return; const obs = obstacles(S), ign = overlapping(S, obs), q = Math.PI / 2 / steps;
+  const rot = Math.round((S.rot + dir * q) / q) * q;
+  if (blockedAt(S, S.x, S.y, rot, obs, ign)) return flashBlocked();
+  placePiece(S, S.x, S.y, rot); renderFurn();
+}
+// move from the current pose toward (tx, ty): full step, else slide on one axis, each clipped to touch the obstacle
+function moveToward(S, tx, ty, obs, ign) {
+  const ok = (x, y) => !blockedAt(S, x, y, S.rot, obs, ign);
+  const reach = (fx, fy) => { if (ok(fx(1), fy(1))) return 1; let lo = 0, hi = 1; for (let i = 0; i < 9; i++) { const m = (lo + hi) / 2; ok(fx(m), fy(m)) ? lo = m : hi = m; } return lo; };
+  const x0 = S.x, y0 = S.y, dx = tx - x0, dy = ty - y0;
+  let t = reach(m => x0 + dx * m, m => y0 + dy * m), x = x0 + dx * t, y = y0 + dy * t;
+  if (t < 1) { const tx2 = reach(m => x + (tx - x) * m, () => y); x += (tx - x) * tx2; const ty2 = reach(() => x, m => y + (ty - y) * m); y += (ty - y) * ty2; }
+  if (Math.hypot(x - x0, y - y0) > 1e-4) placePiece(S, x, y, S.rot, false);
+  return Math.hypot(tx - x, ty - y) > 0.02;
+}
+const floorHit = (cx, cy) => { ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera); const h = new THREE.Vector3(); return ray.ray.intersectPlane(floorPlane, h) ? [h.x, -h.z] : null; };
+{ let mv = null;
+  // capture phase on window so this runs before OrbitControls / walk-look see the press
+  addEventListener('pointerdown', e => {
+    if (e.target !== cv || !selSlot || e.button > 0 || (mode !== 'over' && mode !== 'walk')) return;
+    if (slotAt(e.clientX, e.clientY) !== selSlot) return;
+    const h = floorHit(e.clientX, e.clientY); if (!h) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    const S = selSlot, obs = obstacles(S);
+    mv = { id: e.pointerId, S, ox: S.x - h[0], oy: S.y - h[1], obs, ign: overlapping(S, obs), orb: orbit.enabled };
+    orbit.enabled = false; try { cv.setPointerCapture(e.pointerId); } catch {} cv.classList.add('moving');
+  }, { capture: true });
+  addEventListener('pointermove', e => {
+    if (!mv || e.pointerId !== mv.id) return; e.stopImmediatePropagation();
+    const h = floorHit(e.clientX, e.clientY); if (!h) return;
+    const snap = v => e.altKey ? v : Math.round(v / 0.05) * 0.05;
+    if (moveToward(mv.S, snap(h[0] + mv.ox), snap(h[1] + mv.oy), mv.obs, mv.ign)) { selRing.material.color.set(0xe0533f); dirty = true; }
+    else if (selRing.material.color.getHex() !== 0xff7a45) { selRing.material.color.set(0xff7a45); dirty = true; }
+  }, { capture: true });
+  const end = e => { if (!mv || e.pointerId !== mv.id) return; e.stopImmediatePropagation();
+    const S = mv.S; orbit.enabled = mv.orb; mv = null; cv.classList.remove('moving'); selRing.material.color.set(0xff7a45);
+    placePiece(S, S.x, S.y, S.rot, true); renderFurn(); };
+  addEventListener('pointerup', end, { capture: true }); addEventListener('pointercancel', end, { capture: true });
+  // hover cue: the selected piece shows a move cursor
+  cv.addEventListener('pointermove', e => { if (mv || e.buttons) return; cv.classList.toggle('moving', !!selSlot && slotAt(e.clientX, e.clientY) === selSlot); });
 }
 
 // ---------- photo viewer ----------
@@ -1582,7 +1693,7 @@ applySun();
 setQuality(quality);
 tick();
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); composer.setSize(innerWidth, innerHeight); if (gtao) gtao.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight); dirty = true; });
-window.__dbg = { player, setMode, camera, flyTo, ROOMS, renderer, orbit, scene, SLOTS, setPiece, selectSlot, get mode() { return mode; } };
+window.__dbg = { player, setMode, camera, flyTo, ROOMS, renderer, orbit, scene, SLOTS, setPiece, selectSlot, obstacles, blockedAt, corners, polysHit, get mode() { return mode; } };
 </script>
 </body>
 </html>
