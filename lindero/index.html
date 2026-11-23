@@ -438,18 +438,17 @@ wall(-4.2, -4.2, -4.2, 0.0);
 wall(-2.4, -4.2, -2.4, 0.0);
 wall(-3.6, 1.2, -3.6, 5.4);
 
-// ================= FRONT WING  (x 1.1..10.5, y -11.6..-4.3) =================
+// ================= FRONT WING  (rooms x 1.1..7.0, carport x 7.0..10.5 under the same roof; y -11.6..-4.3) =================
 wall(1.1, -11.6, 1.1, -4.3, { t: XT, top: hWing, matL: M.ext, ops: [win(-8.6, -7.2, 1.6, 2.1), win(-6.2, -4.6, 2.05, 2.42)] });
-wall(10.5, -11.6, 10.5, -4.3, { t: XT, top: hWing, matR: M.ext, ops: [win(-10.6, -8.2, 1.0, 2.1), door(-6.7, -5.8), win(-6.7, -5.8, 2.12, 2.42)] });
-wall(1.1, -11.6, 10.5, -11.6, { t: XT, top: hWing, matR: M.ext, ops: [
-  win(3.7, 6.7, 0, 2.3, 1.5), win(3.5, 10.4, 2.36, 'top', 1.2), win(8.0, 9.6, 1.1, 2.0),
+wall(1.1, -11.6, 7.0, -11.6, { t: XT, top: hWing, matR: M.ext, ops: [
+  win(4.3, 6.2, 1.0, 2.05), win(3.5, 6.9, 2.36, 'top', 1.2),
 ] });
-wall(7.0, -4.3, 10.5, -4.3, { t: XT, top: hWing, matL: M.ext, ops: [win(7.6, 10.0, 1.9, 'top', 1.2)] });
 // interior
 wall(1.1, -6.4, 7.0, -6.4, { top: hWing, ops: [door(2.0, 2.8), door(4.0, 4.8)] });
 wall(3.4, -11.6, 3.4, -6.4, { top: hWing, ops: [door(-10.8, -10.0)] });
 wall(1.1, -9.2, 3.4, -9.2, { top: hWing });
-wall(7.0, -11.6, 7.0, -4.3, { top: hWing, ops: [door(-5.8, -4.9)] });
+// carport side: Bedroom 1's wall of glass looks onto the covered carport; the laundry hall has the side door
+wall(7.0, -11.6, 7.0, -4.3, { t: XT, top: hWing, matR: M.ext, ops: [win(-10.9, -7.1, 0, 2.3, 1.3), door(-5.8, -4.9), win(-5.8, -4.9, 2.12, 2.42)] });
 
 // ---------- generic geometry helpers ----------
 function quad(a, b, c, d, mat, { u = new THREE.Vector3(1, 0, 0), v = null, cast = false, receive = true, parent = groups.house } = {}) {
@@ -529,7 +528,7 @@ for (const j of trimJobs) {
 
 // ---------- floors ----------
 flatRect(-7.4, -4.2, 7.0, 5.4, 0.0, M.floor);
-flatRect(1.1, -11.6, 10.5, -4.3, 0.0, M.floor);
+flatRect(1.1, -11.6, 7.0, -4.3, 0.0, M.floor);
 flatRect(1.1, -9.2, 3.4, -6.4, 0.004, M.tileD);
 flatRect(-4.2, -4.2, -2.4, 0.0, 0.004, M.tileB);
 flatRect(-0.55, -4.15, 1.15, -3.5, 0.006, std({ color: 0x8a4a2a, roughness: .9 })); // entry mat
@@ -565,7 +564,7 @@ for (let y = -12.4; y <= -4.5; y += 1.2) {
 }
 beam(P(5.8, hWing(5.8, 0) - .12, -12.6), P(5.8, hWing(5.8, 0) - .12, -4.3), 0.16, 0.26, M.beam);
 
-// skylights (office, bonus, hall, bath1)
+// skylights (bedroom 1, carport, hall, bath1)
 function skylight(x, y, w, l, hFn) { const h = hFn(x, y) - 0.02; box(x - w / 2, y - l / 2, x + w / 2, y + l / 2, h - 0.03, h, M.sky, { collide: false, cast: false, parent: groups.overhead }); }
 skylight(5.2, -9.0, 0.8, 1.2, hWing); skylight(8.9, -8.0, 0.8, 1.4, hWing); skylight(2.3, -7.8, 0.6, 0.9, hWing);
 skylight(-4.0, 0.6, 0.7, 0.9, hMain); skylight(3.6, 0.2, 0.8, 1.2, hMain);
@@ -605,7 +604,7 @@ function track(x1, x2, y) { const h = hMain(0, y) - 0.02; box(x1, y - .02, x2, y
   for (let x = x1 + .3; x < x2; x += .7) { const c = new THREE.Mesh(new THREE.CylinderGeometry(.04, .045, .14, 16), M.black); c.position.copy(P(x, h - .1, y)); c.rotation.x = .5; groups.overhead.add(c); } }
 track(0.2, 3.8, 2.0); track(0.2, 3.8, 4.0); track(4.6, 6.6, 2.5);
 function flush(x, y, hFn = hMain) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.17, .17, .05, 32), M.light); m.position.copy(P(x, hFn(x, y) - .04, y)); groups.overhead.add(m); }
-flush(-5.6, 3.3); flush(-2.1, 3.3); flush(-5.8, -2.1); flush(-3.3, -2.1); flush(5.2, -9.4, hWing); flush(8.8, -9.8, hWing); flush(-3.6, 0.6); flush(0.3, -3.2); flush(4.0, -5.3, hWing);
+flush(-5.6, 3.3); flush(-2.1, 3.3); flush(-5.8, -2.1); flush(-3.3, -2.1); flush(5.2, -9.4, hWing); flush(-3.6, 0.6); flush(0.3, -3.2); flush(4.0, -5.3, hWing);
 box(-4.17, -1.85, -4.13, -1.25, 1.95, 2.05, M.light, { collide: false });
 box(2.75, -9.17, 3.2, -9.13, 1.95, 2.05, M.light, { collide: false });
 box(-4.16, -1.9, -4.14, -1.2, 1.1, 1.85, std({ color: 0xdde4e8, roughness: .02, metalness: 1 }), { collide: false }); // mirror
@@ -629,6 +628,19 @@ quad(P(-4.14, .55, -3.4), P(-2.46, .55, -3.4), P(-2.46, 1.95, -3.4), P(-4.14, 1.
 box(-4.14, -2.0, -3.6, -1.1, 0, .84, M.woodVanity);
 box(-4.15, -2.02, -3.55, -1.08, .84, .88, M.whiteMarble, { collide: false });
 box(-4.14, -0.6, -3.75, -0.25, .3, .75, M.porcelain);
+// shower heads, curtain rods, toilet tanks (both are full baths)
+const chrome = std({ color: 0xdfe3e6, roughness: .15, metalness: 1 });
+const curtain = std({ color: 0xf4f6f7, roughness: .6, transparent: true, opacity: .55, side: THREE.DoubleSide });
+// bath 1: tub along the west wall (x 1.17..1.95, y -9.14..-7.55)
+box(1.17, -9.0, 1.3, -8.94, 1.85, 1.9, chrome, { collide: false }); box(1.28, -9.02, 1.36, -8.92, 1.78, 1.86, chrome, { collide: false });
+box(1.93, -9.14, 1.96, -7.55, 1.98, 2.0, chrome, { collide: false });
+box(1.94, -8.0, 1.95, -7.55, .6, 1.98, curtain, { collide: false, cast: false });
+box(2.15, -9.14, 2.5, -9.0, .42, .78, M.porcelain, { collide: false });
+// bath 2: tub along the south wall (x -4.14..-2.46, y -4.14..-3.4)
+box(-4.14, -3.82, -4.0, -3.72, 1.85, 1.9, chrome, { collide: false }); box(-4.04, -3.81, -3.96, -3.73, 1.78, 1.86, chrome, { collide: false });
+box(-4.14, -3.41, -2.46, -3.38, 1.98, 2.0, chrome, { collide: false });
+box(-2.95, -3.4, -2.46, -3.39, .6, 1.98, curtain, { collide: false, cast: false });
+box(-4.14, -0.62, -4.0, -0.25, .42, .78, M.porcelain, { collide: false });
 // ---------- fireplace (living, against bedroom-wing wall) ----------
 box(-0.54, 3.3, -0.5, 5.3, 0, EAVE + .4, M.subway, { collide: false, cast: false });
 box(-0.5, 3.9, -0.22, 4.8, 0.15, 0.75, M.black);
@@ -641,7 +653,7 @@ const fd = new THREE.Group(); fd.position.copy(P(-0.2, 0, -4.2));
 const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 0.05), [M.woodDoor, M.woodDoor, M.woodDoor, M.woodDoor, M.redDoor, M.woodDoor]);
 leaf.position.set(0.45, 1.05, 0); leaf.castShadow = true; fd.add(leaf); fd.rotation.y = -1.25; groups.house.add(fd);
 // interior lights (no shadows)
-for (const [x, y, i] of [[1.8, 2.5, 5], [4.5, -2.6, 4], [5.5, 2.6, 3], [-3.6, 0.6, 2], [-5.6, 3.3, 3], [-2.1, 3.3, 2.5], [-5.8, -2.1, 2.5], [-3.3, -2.1, 1.5], [4.0, -5.4, 2], [5.2, -9.0, 3], [8.8, -8.0, 3], [2.3, -7.8, 1.5], [0.3, -3.2, 2]]) {
+for (const [x, y, i] of [[1.8, 2.5, 5], [4.5, -2.6, 4], [5.5, 2.6, 3], [-3.6, 0.6, 2], [-5.6, 3.3, 3], [-2.1, 3.3, 2.5], [-5.8, -2.1, 2.5], [-3.3, -2.1, 1.5], [4.0, -5.4, 2], [5.2, -9.0, 3], [2.3, -7.8, 1.5], [0.3, -3.2, 2]]) {
   lightSpots.push({ p: P(x, 2.25, y), i: i * 0.8, c: 0xffe2bd, d: 7 });
 }
 
@@ -656,17 +668,15 @@ for (let i = 0; i < street.length - 1; i++) {
   const d = new THREE.Mesh(new THREE.CircleGeometry(4.5, 24), M.asphalt); d.rotation.x = -Math.PI / 2; d.position.copy(P(bx, -.1, by)); groups.site.add(d);
 }
 flatRect(-40, -22.7, 30, -21.3, -.09, M.concrete, groups.site); // sidewalk (approx)
-// driveway + carport slab, walkway
-flatRect(3.4, -22.7, 10.5, -11.6, -.1, M.pavers, groups.site);
-flatRect(-0.3, -15.6, 3.4, -14.6, -.1, M.pavers, groups.site);
+// driveway (into the carport), carport slab, walkway
+flatRect(6.4, -22.7, 10.8, -11.6, -.1, M.pavers, groups.site);
+flatRect(7.0, -11.6, 10.6, -4.3, -.1, M.concrete, groups.site);
+flatRect(-0.3, -15.6, 6.4, -14.6, -.1, M.pavers, groups.site);
 flatRect(-0.3, -15.6, 0.9, -4.2, -.1, M.pavers, groups.site);
 flatRect(-0.3, -21.3, 0.7, -15.6, -.1, M.pavers, groups.site);
-// carport roof on posts
-box(3.0, -17.7, 10.9, -11.75, 2.55, 2.75, M.roof, { collide: false, parent: groups.overhead });
-box(3.0, -17.7, 10.9, -17.6, 2.45, 2.75, M.fascia, { collide: false, parent: groups.overhead });
-for (const [x, y] of [[3.2, -17.4], [7.0, -17.4], [10.7, -17.4]]) box(x - .07, y - .07, x + .07, y + .07, -.1, 2.55, M.beam, { parent: groups.site });
-box(4.0, -16.0, 5.0, -15.0, 2.5, 2.54, M.sky, { collide: false, cast: false, parent: groups.overhead });
-box(8.0, -16.0, 9.0, -15.0, 2.5, 2.54, M.sky, { collide: false, cast: false, parent: groups.overhead });
+// carport posts (open east and south sides under the front-wing roof)
+for (const [x, y] of [[10.4, -11.5], [10.4, -7.9], [10.4, -4.4]]) box(x - .08, y - .08, x + .08, y + .08, -.1, 2.45, M.beam, { parent: groups.site });
+box(10.36, -11.6, 10.44, -4.3, 2.3, 2.45, M.beam, { collide: false, parent: groups.site }); // header beam
 // bench by the front door
 box(-2.1, -5.1, -0.7, -4.65, -.1, .45, std({ color: 0xa0683a, roughness: .7 }), { parent: groups.site });
 // back deck + flagstone patio
@@ -870,11 +880,8 @@ bed(-5.85, 1.26, ROT.N, F.duvets[0]);                 // primary: headboard on h
 floorLamp(-7.1, 5.0);
 bed(-3.54, 3.6, ROT.E, F.duvets[1]);                  // bedroom 2
 bed(-7.34, -2.0, ROT.E, F.duvets[2]);                 // bedroom / office
-bed(6.94, -9.0, ROT.W, F.duvets[3]);                  // front-wing office / bedroom
-// Bonus room as a home office
-desk(8.75, -11.5, ROT.N);
-floorLamp(10.2, -4.7);
-bookcase(7.12, -6.5, ROT.E);
+bed(3.46, -8.4, ROT.E, F.duvets[3]);                  // bedroom 1 (front wing), headboard on the west wall
+desk(5.6, -11.5, ROT.N);                               // desk under the south window
 
 // ================= ROOMS =================
 const ROOMS = [
@@ -884,16 +891,15 @@ const ROOMS = [
   { name: 'Dining', r: [[4.2, -0.8, 7.0, 5.4]], photo: 'fireplace', note: 'Seats six', spot: [5.6, 0.0, 0.2] },
   { name: 'Hallway', r: [[-7.4, 0.0, -0.6, 1.2]], photo: 'hall', spot: [-1.2, 0.6, 1.57] },
   { name: 'Bedroom 3', r: [[-7.4, -4.2, -4.2, 0.0]], photo: 'bed3', note: '≈145 sq ft · mini-split', spot: [-4.7, -0.6, 2.2] },
-  { name: 'Hall bath', r: [[-4.2, -4.2, -2.4, 0.0]], photo: 'bath2', spot: [-3.3, -0.5, 3.14] },
+  { name: 'Hall bath', r: [[-4.2, -4.2, -2.4, 0.0]], photo: 'bath2', note: 'Full bath · tub/shower · overhead heat', spot: [-3.3, -0.5, 3.14] },
   { name: 'Closet', r: [[-2.4, -4.2, -0.6, 0.0]], photo: 'closet', hide: true },
   { name: 'Bedroom 2', r: [[-7.4, 1.2, -3.6, 5.4]], photo: 'primary', note: '≈172 sq ft · slider to the backyard', spot: [-4.1, 4.8, 2.5] },
   { name: 'Bedroom 4', r: [[-3.6, 1.2, -0.6, 5.4]], photo: 'bed2', note: '≈136 sq ft', spot: [-1.0, 1.7, 0.9] },
   { name: 'Laundry / pantry', r: [[1.1, -6.4, 7.0, -4.3]], photo: 'laundry', spot: [2.0, -4.0, Math.PI] },
-  { name: 'Bathroom', r: [[1.1, -9.2, 3.4, -6.4]], photo: 'bath1', note: 'Heated floor', spot: [2.4, -6.7, Math.PI] },
+  { name: 'Bathroom', r: [[1.1, -9.2, 3.4, -6.4]], photo: 'bath1', note: 'Full bath · tub/shower · heated floor', spot: [2.4, -6.7, Math.PI] },
   { name: 'Storage', r: [[1.1, -11.6, 3.4, -9.2]], hide: true },
   { name: 'Bedroom 1', r: [[3.4, -11.6, 7.0, -6.4]], photo: 'office', note: '≈201 sq ft · mini-split · skylight', spot: [4.4, -6.9, -2.6] },
-  { name: 'Bonus room', r: [[7.0, -11.6, 10.5, -4.3]], photo: 'bonus', note: 'Home office', spot: [9.8, -5.0, 2.4] },
-  { name: 'Carport', r: [[3.0, -17.7, 10.9, -11.6]], outdoor: true, hide: true },
+  { name: 'Carport', r: [[7.0, -11.6, 10.6, -4.3]], outdoor: true, note: 'Covered, with skylight' },
   { name: 'Deck', r: [[-3.6, 5.4, 7.6, 8.4]], photo: 'deck', outdoor: true, spot: [3.0, 8.0, Math.PI] },
   { name: 'Patio & pond', r: [[-9.6, 5.4, -3.6, 15.2]], photo: 'backyard', outdoor: true, spot: [-4.5, 9.0, 0.9] },
   { name: 'Backyard', r: [[-9.6, 5.4, 12, 15.2]], photo: 'backyard', outdoor: true, hide: true },
@@ -1184,7 +1190,7 @@ const mapBase = document.createElement('canvas'); mapBase.width = mc.width; mapB
 { const g = mapBase.getContext('2d');
   g.fillStyle = '#3e5a33'; g.fillRect(0, 0, mc.width, mc.height);
   g.fillStyle = '#8f8a84'; g.fillRect(mx(-3.6), my(8.4), mx(7.6) - mx(-3.6), my(5.4) - my(8.4));
-  g.fillStyle = '#7a5f55'; g.fillRect(mx(3.0), my(-11.6), mx(10.9) - mx(3.0), my(-17.7) - my(-11.6));
+  g.fillStyle = '#8c8780'; g.fillRect(mx(7.0), my(-4.3), mx(10.6) - mx(7.0), my(-11.6) - my(-4.3));
   g.fillStyle = '#2a5560'; g.beginPath(); g.ellipse(mx(-6.2), my(12.4), 2.1 * mc.width / 23, 1.7 * mc.height / 34.5, 0, 0, Math.PI * 2); g.fill();
   for (const R of ROOMS) { if (R.outdoor) continue; const [a, b, c, d] = R.r[0]; g.fillStyle = '#e9dfcf'; g.fillRect(mx(a), my(d), mx(c) - mx(a), my(b) - my(d)); }
   g.fillStyle = '#2b2b2b';
