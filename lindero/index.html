@@ -89,6 +89,7 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
@@ -603,7 +604,7 @@ function tree(x, y, h, r, color) {
 }
 tree(-4.5, -10.5, 5.5, 2.2, 0x5f8a3a); tree(-3.0, -7.0, 3.2, 1.3, 0xa8321e); tree(-7.5, -18.5, 7, 3, 0x4c7a34);
 tree(11.0, -19.0, 5, 2, 0x6b8f3c); tree(-1.5, 12.5, 5.5, 2.4, 0xb8a03a); tree(4.0, 13.5, 4.5, 2.0, 0x5f8a3a);
-tree(10.5, 7.5, 4, 1.6, 0xc4562a); tree(-8.6, 4.0, 3.5, 1.4, 0x5f8a3a);
+tree(10.5, 7.5, 4, 1.6, 0xc4562a); tree(-9.0, 3.0, 3.2, 0.8, 0x5f8a3a);
 for (let i = 0; i < 26; i++) { const x = -7.2 + i * 0.32; if (x > -1.8 && x < 1.0) continue; const s = new THREE.Mesh(new THREE.IcosahedronGeometry(.32 + rnd() * .15, 1), std({ color: rnd() > .7 ? 0x7d8f3a : 0x46703a, flatShading: true })); s.position.copy(P(x, .1, -4.75 - rnd() * .3)); s.castShadow = true; groups.site.add(s); }
 for (let i = 0; i < 14; i++) { const s = new THREE.Mesh(new THREE.IcosahedronGeometry(.35 + rnd() * .2, 1), std({ color: 0x46703a, flatShading: true })); s.position.copy(P(-9.0 + rnd() * .4, .15, 6 + i * .65)); groups.site.add(s); }
 
@@ -645,6 +646,141 @@ composer.addPass(new RenderPass(scene, camera));
 let gtao = null;
 if (!lowPower) { gtao = new GTAOPass(scene, camera, innerWidth, innerHeight); gtao.blendIntensity = 0.85; gtao.updateGtaoMaterial({ radius: 0.6, distanceExponent: 1.5, thickness: 1.2, scale: 1 }); composer.addPass(gtao); }
 composer.addPass(new OutputPass());
+
+// ================= FURNITURE (IKEA-style pieces at real catalog dimensions) =================
+const fabricTex = (base, tile = 0.25) => canvasTex(256, tile, (g, s) => { g.fillStyle = base; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < s; i += 2) { g.fillStyle = `rgba(0,0,0,${.03 + rnd() * .05})`; g.fillRect(0, i, s, 1); g.fillStyle = `rgba(255,255,255,${.02 + rnd() * .04})`; g.fillRect(i, 0, 1, s); }
+  for (let i = 0; i < 1500; i++) { g.fillStyle = `rgba(0,0,0,${rnd() * .06})`; g.fillRect(rnd() * s, rnd() * s, 2, 2); } });
+const F = {
+  oak: pbr('oak_wood_planks', 1.6, { color: 0xe8cfa8, ns: .3, roughness: .7 }),
+  walnut: pbr('dark_wood', 1.0, { color: 0x9a6a48, ns: .3, roughness: .6 }),
+  whiteLam: std({ color: 0xf4f3ef, roughness: .35 }),
+  blackBrown: std({ color: 0x2a2320, roughness: .5 }),
+  sofa: std({ map: fabricTex('#8d8f88'), roughness: 1 }),
+  armchair: std({ map: fabricTex('#c9b79a'), roughness: 1 }),
+  sheet: std({ map: fabricTex('#f2f0ea', .2), roughness: 1 }),
+  duvets: ['#9aa7b4', '#c8b9a2', '#8f9a86', '#b59b9b'].map(c => std({ map: fabricTex(c, .2), roughness: 1 })),
+  rug: std({ map: canvasTex(512, 2.0, (g, s) => { g.fillStyle = '#d9d2c3'; g.fillRect(0, 0, s, s); g.strokeStyle = '#7f7466'; g.lineWidth = 10; g.strokeRect(24, 24, s - 48, s - 48); g.lineWidth = 3; for (let i = 0; i < 8; i++) { g.beginPath(); g.moveTo(0, i * s / 8 + 32); g.lineTo(s, i * s / 8 - 32); g.stroke(); } for (let i = 0; i < 4000; i++) { g.fillStyle = `rgba(0,0,0,${rnd() * .05})`; g.fillRect(rnd() * s, rnd() * s, 2, 2); } }), roughness: 1 }),
+  screen: std({ color: 0x050607, roughness: .08, metalness: .3 }),
+  shade: std({ color: 0xf3ead8, emissive: 0xffd9a0, emissiveIntensity: .55, roughness: .9, side: THREE.DoubleSide }),
+  metalBlack: std({ color: 0x1c1c1c, roughness: .35, metalness: .7 }),
+};
+function furn(x, y, rot) { const g = new THREE.Group(); g.position.copy(P(x, 0, y)); g.rotation.y = rot; groups.house.add(g); return g; }
+// local coords: lx right, ly forward (toward the room), z up. rot: 0 = facing +y(north), -PI/2 = east, PI/2 = west, PI = south
+function part(g, lx, ly, w, d, z0, h, mat, r = 0) {
+  const geo = r > 0 ? new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)) : boxGeo(w, h, d);
+  const m = new THREE.Mesh(geo, mat); m.position.set(lx, z0 + h / 2, -ly); m.castShadow = true; m.receiveShadow = true; g.add(m); return m;
+}
+function solid(g) { g.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(g); addCol(b.min.x, -b.max.z, b.max.x, -b.min.z); return g; }
+const ROT = { N: 0, E: -Math.PI / 2, W: Math.PI / 2, S: Math.PI };
+function lampLight(g, lx, ly, z, i = 1.2) { const l = new THREE.PointLight(0xffc98a, i, 4.5, 1.8); l.position.set(lx, z, -ly); g.add(l); }
+function tableLamp(g, lx, ly, z0) {
+  part(g, lx, ly, .12, .12, z0, .02, F.metalBlack); part(g, lx, ly, .02, .02, z0, .3, F.metalBlack);
+  const sh = new THREE.Mesh(new THREE.CylinderGeometry(.11, .14, .2, 24, 1, true), F.shade); sh.position.set(lx, z0 + .36, -ly); g.add(sh);
+  lampLight(g, lx, ly, z0 + .36, 0.6);
+}
+function floorLamp(x, y) {
+  const g = furn(x, y, 0);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .03, 24), F.metalBlack); base.position.y = .015; g.add(base);
+  part(g, 0, 0, .025, .025, 0, 1.45, F.metalBlack);
+  const sh = new THREE.Mesh(new THREE.CylinderGeometry(.2, .24, .3, 32, 1, true), F.shade); sh.position.y = 1.5; g.add(sh);
+  lampLight(g, 0, 0, 1.45, 1.4); addCol(x - .16, y - .16, x + .16, y + .16); return g;
+}
+// MALM-style full bed (frame 145 x 209 cm, mattress 137 x 191)
+function bed(x, y, rot, duvet) {
+  const g = furn(x, y, rot);
+  part(g, 0, 1.045, 1.45, 2.09, 0.05, 0.33, F.oak, .01);           // frame
+  part(g, 0, 0.02, 1.45, 0.04, 0.0, 1.0, F.oak, .01);               // headboard
+  part(g, 0, 1.0, 1.37, 1.91, 0.3, 0.22, F.sheet, .06);             // mattress
+  part(g, 0, 1.35, 1.44, 1.38, 0.47, 0.07, duvet, .035);            // duvet over foot end
+  for (const lx of [-.36, .36]) part(g, lx, 0.3, .6, .4, 0.5, .14, F.sheet, .06);
+  for (const lx of [-1.0, 1.0]) { part(g, lx, .22, .4, .4, 0, .55, F.whiteLam, .01); tableLamp(g, lx, .22, .55); } // nightstands + lamps
+  return solid(g);
+}
+// EKTORP-style 3-seat sofa (218 x 88 x 88)
+function sofa(x, y, rot) {
+  const g = furn(x, y, rot);
+  part(g, 0, .44, 2.18, .88, .08, .34, F.sofa, .05);
+  part(g, 0, .12, 2.0, .24, .38, .5, F.sofa, .08);
+  for (const lx of [-1.0, 1.0]) part(g, lx, .44, .18, .88, .08, .58, F.sofa, .07);
+  for (const lx of [-.61, 0, .61]) part(g, lx, .54, .6, .62, .42, .14, F.sofa, .06);
+  for (const lx of [-.45, .45]) part(g, lx, .3, .42, .14, .52, .38, F.sofa, .06);
+  for (const [lx, ly] of [[-1, .06], [1, .06], [-1, .82], [1, .82]]) part(g, lx, ly, .05, .05, 0, .08, F.walnut);
+  return solid(g);
+}
+// POÄNG-style armchair
+function armchair(x, y, rot) {
+  const g = furn(x, y, rot);
+  part(g, 0, .4, .68, .8, .05, .32, F.walnut, .02);
+  part(g, 0, .42, .6, .7, .3, .12, F.armchair, .05);
+  const back = part(g, 0, .12, .6, .14, .38, .62, F.armchair, .06); back.rotation.x = -.25;
+  for (const lx of [-.33, .33]) part(g, lx, .45, .04, .7, .3, .25, F.walnut, .01);
+  return solid(g);
+}
+// BILLY-style bookcase (80 x 28 x 202) with books
+function bookcase(x, y, rot) {
+  const g = furn(x, y, rot);
+  part(g, 0, .14, .8, .02, 0, 2.02, F.whiteLam);
+  for (const lx of [-.39, .39]) part(g, lx, .14, .02, .28, 0, 2.02, F.whiteLam);
+  const shelves = [0.06, 0.42, 0.78, 1.14, 1.5, 1.86, 2.0];
+  for (const z of shelves) part(g, 0, .14, .78, .28, z, .02, F.whiteLam);
+  const cols = [0x8c2f2f, 0x2f4f7c, 0xd8c8a8, 0x3f6b4a, 0x1f1f1f, 0xc27a2c, 0x6b4f7c, 0xe8e4da, 0x55606b];
+  for (let si = 0; si < 5; si++) { let lx = -.37; const z = shelves[si] + .02; while (lx < .3) { const w = .025 + rnd() * .03, h = .2 + rnd() * .1; if (rnd() < .12) { lx += .06; continue; } part(g, lx + w / 2, .15 + rnd() * .02, w, .2, z, h, std({ color: cols[Math.floor(rnd() * cols.length)], roughness: .8 })); lx += w + .003; } }
+  return solid(g);
+}
+// LACK-style coffee table (90 x 55 x 45)
+function coffeeTable(x, y, rot) { const g = furn(x, y, rot); part(g, 0, .275, .9, .55, .4, .05, F.blackBrown); for (const [lx, ly] of [[-.4, .05], [.4, .05], [-.4, .5], [.4, .5]]) part(g, lx, ly, .05, .05, 0, .4, F.blackBrown); part(g, 0, .275, .84, .49, .12, .02, F.blackBrown); return solid(g); }
+// BESTÅ-style TV bench (180 x 40 x 38) + 55" TV
+function tvBench(x, y, rot) {
+  const g = furn(x, y, rot);
+  part(g, 0, .2, 1.8, .4, .06, .38, F.whiteLam, .01);
+  for (const lx of [-.6, 0, .6]) part(g, lx, .401, .58, .005, .1, .3, std({ color: 0xe9e7e1, roughness: .3 }));
+  part(g, 0, .2, .3, .2, .44, .02, F.metalBlack); part(g, 0, .2, .06, .04, .46, .1, F.metalBlack);
+  part(g, 0, .2, 1.23, .04, .54, .72, F.metalBlack); part(g, 0, .222, 1.2, .002, .555, .69, F.screen);
+  return solid(g);
+}
+// EKEDALEN-style dining table (seats 6) + chairs
+function chair(g, lx, ly, rot) {
+  const c = new THREE.Group(); c.position.set(lx, 0, -ly); c.rotation.y = rot; g.add(c);
+  part(c, 0, 0, .44, .44, .44, .04, F.oak, .01);
+  for (const [a, b] of [[-.19, -.19], [.19, -.19], [-.19, .19], [.19, .19]]) part(c, a, b, .035, .035, 0, .44, F.oak);
+  part(c, 0, -.2, .42, .03, .48, .38, F.oak, .01);
+}
+function diningTable(x, y, rot) {
+  const g = furn(x, y, rot);
+  part(g, 0, 0, .9, 1.6, .72, .04, F.oak, .01);
+  for (const [lx, ly] of [[-.4, -.74], [.4, -.74], [-.4, .74], [.4, .74]]) part(g, lx, ly, .06, .06, 0, .72, F.oak);
+  for (const ly of [-.45, .45]) { chair(g, -.58, ly, -Math.PI / 2); chair(g, .58, ly, Math.PI / 2); }
+  chair(g, 0, -1.02, 0); chair(g, 0, 1.02, Math.PI);
+  g.updateMatrixWorld(true); addCol(x - .45, y - .8, x + .45, y + .8);
+  return g;
+}
+function desk(x, y, rot) { const g = furn(x, y, rot); part(g, 0, .3, 1.3, .6, .72, .03, F.whiteLam); for (const lx of [-.5, .5]) part(g, lx, .3, .36, .58, 0, .72, F.whiteLam); chair(g, 0, .85, Math.PI); tableLamp(g, .5, .15, .75); return solid(g); }
+function rug(x1, y1, x2, y2) { flatRect(x1, y1, x2, y2, 0.008, F.rug); }
+
+// Living room: TV wall on the west, sofa facing it, bookcases by the hall, armchair by the fireplace
+rug(0.2, 1.2, 3.2, 3.6);
+tvBench(-0.53, 2.3, ROT.E);
+sofa(3.55, 2.4, ROT.W);
+coffeeTable(1.65, 2.4, ROT.W);
+armchair(1.2, 4.85, ROT.S - 0.5);
+floorLamp(3.7, 3.9);
+floorLamp(0.0, 1.35);
+bookcase(-0.46, -1.55, ROT.E); bookcase(-0.46, -0.72, ROT.E);
+// Dining
+diningTable(5.6, 2.6, 0);
+{ const h = hMain(5.6, 2.6); box(5.596, 2.596, 5.604, 2.604, 1.95, h, M.black, { collide: false, cast: false, parent: groups.overhead });
+  const sh = new THREE.Mesh(new THREE.SphereGeometry(.22, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), F.shade); sh.position.copy(P(5.6, 1.72, 2.6)); groups.overhead.add(sh); }
+// Bedrooms – full beds
+bed(-5.85, 1.26, ROT.N, F.duvets[0]);                 // primary: headboard on hall wall, facing the slider
+floorLamp(-7.1, 5.0);
+bed(-3.54, 3.6, ROT.E, F.duvets[1]);                  // bedroom 2
+bed(-7.34, -2.0, ROT.E, F.duvets[2]);                 // bedroom / office
+bed(6.94, -9.0, ROT.W, F.duvets[3]);                  // front-wing office / bedroom
+// Bonus room as a home office
+desk(8.75, -11.5, ROT.N);
+floorLamp(10.2, -4.7);
+bookcase(7.12, -6.5, ROT.E);
 
 // ================= ROOMS =================
 const ROOMS = [
