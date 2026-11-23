@@ -4,45 +4,109 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="robots" content="noindex, nofollow">
-<title>New House 3D</title>
+<title>Lindero House</title>
 <style>
-  :root { --bg:#0f1114; --panel:rgba(18,20,24,.78); --text:#f2efe9; --muted:#b9b3a8; --accent:#d9483b; }
-  * { box-sizing:border-box; }
+  :root {
+    --bg:#0e0f11; --glass:rgba(20,21,24,.72); --glass-2:rgba(255,255,255,.08); --line:rgba(255,255,255,.12);
+    --text:#f4f1ea; --muted:#a9a39a; --accent:#e0533f; --accent-2:#f3a64b; --r:14px;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--text);
-    font:14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
-  canvas { display:block; }
+    font:14px/1.4 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; user-select:none; -webkit-user-select:none; }
+  canvas#gl { display:block; position:fixed; inset:0; touch-action:none; cursor:grab; }
+  canvas#gl.dragging { cursor:grabbing; }
   #labels { position:fixed; inset:0; pointer-events:none; }
-  .rlabel { font-size:11px; font-weight:600; color:#fff; background:rgba(0,0,0,.55); padding:2px 7px;
-    border-radius:10px; white-space:nowrap; pointer-events:auto; cursor:pointer; }
-  .panel { position:fixed; background:var(--panel); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-    border:1px solid rgba(255,255,255,.08); border-radius:12px; }
-  #hud { top:12px; left:12px; padding:10px 14px; max-width:calc(100vw - 24px); }
-  #hud .room { font-size:18px; font-weight:700; }
-  #hud .hint { color:var(--muted); font-size:12px; margin-top:2px; }
-  #map { bottom:12px; right:12px; padding:6px; }
-  #map canvas { width:170px; height:250px; display:block; }
-  #bar { top:12px; right:12px; padding:6px; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw; }
-  button, select { background:rgba(255,255,255,.1); color:var(--text); border:1px solid rgba(255,255,255,.15);
-    border-radius:8px; padding:6px 10px; font:inherit; font-size:13px; cursor:pointer; }
-  button:hover, select:hover { background:rgba(255,255,255,.18); }
-  select option { color:#111; }
-  #start { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,12,15,.72); z-index:5; padding:16px; }
-  #start .card { max-width:460px; width:100%; padding:24px; border-radius:16px; background:#16181c; border:1px solid rgba(255,255,255,.1); }
-  #start h1 { margin:0 0 4px; font-size:24px; }
-  #start p { color:var(--muted); margin:6px 0 14px; }
-  #start .keys { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13px; margin-bottom:18px; }
-  #start kbd { background:#2a2d33; border-radius:4px; padding:1px 6px; font-family:inherit; font-size:12px; }
-  #start .go { display:flex; gap:8px; flex-wrap:wrap; }
-  #start .go button { flex:1; padding:10px; font-weight:600; }
-  #start .go .primary { background:var(--accent); border-color:var(--accent); }
-  #photo { position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:6; flex-direction:column; gap:10px; padding:16px; }
-  #photo img { max-width:100%; max-height:85vh; border-radius:10px; }
-  #photo .cap { color:var(--muted); }
-  #cross { position:fixed; left:50%; top:50%; width:6px; height:6px; margin:-3px; border-radius:50%; background:rgba(255,255,255,.7); pointer-events:none; }
-  #joy { position:fixed; left:24px; bottom:24px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); display:none; touch-action:none; }
-  #joy .knob { position:absolute; left:40px; top:40px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.35); }
+  .glass { background:var(--glass); backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);
+    border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); }
   .hidden { display:none !important; }
-  @media (max-width:600px) { #map canvas { width:120px; height:176px; } #bar { max-width:70vw; } #hud .room{font-size:15px;} }
+  button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+
+  /* room labels in overview */
+  .rlabel { font-size:12px; font-weight:600; color:#fff; background:rgba(15,15,18,.72); padding:4px 10px; border-radius:999px;
+    white-space:nowrap; pointer-events:auto; cursor:pointer; border:1px solid rgba(255,255,255,.18); transition:transform .15s, background .15s; }
+  .rlabel:hover { transform:scale(1.08); background:var(--accent); }
+
+  /* top-left: brand + current room */
+  #top { position:fixed; top:14px; left:14px; display:flex; align-items:center; gap:10px; padding:8px 14px 8px 10px; max-width:calc(100vw - 90px); }
+  #top .dot { width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); flex:none;
+    display:grid; place-items:center; font-weight:800; font-size:13px; color:#fff; }
+  #top .room { font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #top .note { color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* right toolbar */
+  #tools { position:fixed; top:14px; right:14px; display:flex; flex-direction:column; gap:4px; padding:5px; }
+  #tools button { width:42px; height:42px; border-radius:10px; display:grid; place-items:center; color:#ddd; position:relative; }
+  #tools button:hover { background:var(--glass-2); color:#fff; }
+  #tools button.on { background:var(--accent); color:#fff; }
+  #tools svg { width:20px; height:20px; }
+  #tools button[data-tip]:hover::after { content:attr(data-tip); position:absolute; right:52px; top:50%; transform:translateY(-50%);
+    background:#000c; padding:4px 8px; border-radius:6px; font-size:12px; white-space:nowrap; pointer-events:none; }
+
+  /* drawers */
+  .drawer { position:fixed; top:14px; right:72px; width:290px; max-height:calc(100vh - 28px); overflow:auto; padding:12px; }
+  .drawer h3 { margin:2px 4px 10px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  .rooms { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .rooms button { text-align:left; border-radius:10px; overflow:hidden; background:var(--glass-2); border:1px solid transparent; }
+  .rooms button:hover { border-color:var(--accent); }
+  .rooms button.cur { border-color:var(--accent-2); }
+  .rooms .thumb { height:64px; background:#222 center/cover no-repeat; }
+  .rooms .nm { padding:6px 8px; font-size:12px; font-weight:600; }
+  .seg { display:flex; background:var(--glass-2); border-radius:10px; padding:3px; gap:3px; margin-bottom:10px; }
+  .seg button { flex:1; padding:7px 0; border-radius:8px; font-size:13px; color:var(--muted); }
+  .seg button.on { background:#fff; color:#111; font-weight:600; }
+  .row { display:flex; justify-content:space-between; align-items:center; padding:6px 4px; color:var(--muted); font-size:13px; }
+  .row b { color:var(--text); font-weight:600; }
+  .keys { display:grid; grid-template-columns:auto 1fr; gap:8px 12px; font-size:13px; padding:0 4px; }
+  kbd { background:#2a2c31; border:1px solid #3a3d43; border-bottom-width:2px; border-radius:6px; padding:1px 7px; font:inherit; font-size:12px; }
+
+  /* minimap */
+  #map { position:fixed; bottom:14px; right:14px; padding:6px; }
+  #map canvas { width:150px; height:225px; display:block; border-radius:9px; cursor:crosshair; }
+
+  /* hint chip */
+  #hint { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); padding:9px 16px; font-size:13px; color:#e9e5dd;
+    transition:opacity .6s; white-space:nowrap; pointer-events:none; }
+  #hint.fade { opacity:0; }
+
+  /* tap-to-walk marker */
+  #marker { position:fixed; width:34px; height:34px; margin:-17px; border-radius:50%; border:2px solid #fff; pointer-events:none;
+    box-shadow:0 0 0 4px rgba(224,83,63,.45); opacity:0; transition:opacity .25s; }
+
+  /* photo */
+  #photo { position:fixed; inset:0; background:rgba(0,0,0,.86); display:none; align-items:center; justify-content:center; z-index:20; flex-direction:column; gap:12px; padding:20px; }
+  #photo img { max-width:100%; max-height:82vh; border-radius:12px; box-shadow:var(--shadow); }
+  #photo .cap { color:var(--muted); font-size:13px; }
+  #photo button { padding:8px 16px; border-radius:999px; background:#fff; color:#111; font-weight:600; }
+
+  /* joystick */
+  #joy { position:fixed; left:22px; bottom:22px; width:116px; height:116px; border-radius:50%; background:rgba(20,21,24,.45);
+    border:1px solid var(--line); display:none; touch-action:none; backdrop-filter:blur(8px); }
+  #joy .knob { position:absolute; left:38px; top:38px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.8); }
+
+  /* landing / loader */
+  #intro { position:fixed; inset:0; z-index:30; display:flex; align-items:center; justify-content:center; padding:16px;
+    background:radial-gradient(1200px 600px at 50% 110%, rgba(224,83,63,.25), transparent), rgba(10,11,13,.78); transition:opacity .5s; }
+  #intro.out { opacity:0; pointer-events:none; }
+  #intro .card { width:100%; max-width:440px; padding:28px; }
+  #intro .eyebrow { color:var(--accent-2); font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+  #intro h1 { margin:6px 0 8px; font-size:30px; line-height:1.1; letter-spacing:-.01em; }
+  #intro p { color:var(--muted); margin:0 0 18px; }
+  #intro .bar { height:4px; background:var(--glass-2); border-radius:4px; overflow:hidden; margin-bottom:16px; }
+  #intro .bar i { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width .2s; }
+  #intro .go { display:flex; gap:8px; }
+  #intro .go button { flex:1; padding:12px; border-radius:12px; font-weight:700; background:var(--glass-2); border:1px solid var(--line); }
+  #intro .go .primary { background:var(--accent); border-color:var(--accent); }
+  #intro .go button:disabled { opacity:.4; cursor:wait; }
+  #intro small { display:block; margin-top:14px; color:#7d786f; font-size:11px; }
+
+  @media (max-width:640px) {
+    #map canvas { width:100px; height:150px; }
+    .drawer { left:10px; right:10px; width:auto; top:auto; bottom:14px; max-height:60vh; }
+    #top { top:10px; left:10px; }
+    #tools { top:10px; right:10px; }
+    #hint { bottom:150px; font-size:12px; }
+  }
 </style>
 <script type="importmap">
 { "imports": {
@@ -52,43 +116,74 @@
 </script>
 </head>
 <body>
+<canvas id="gl"></canvas>
 <div id="labels"></div>
-<div id="hud" class="panel"><div class="room" id="roomName">Front yard</div><div class="hint" id="roomHint">Press P to see the real photo</div></div>
-<div id="bar" class="panel">
-  <select id="jump" title="Jump to room"><option value="">Jump to…</option></select>
-  <button id="btnView" title="Toggle overview (O)">Overview</button>
-  <button id="btnPhoto" title="Real photo of this spot (P)">Photo</button>
-  <button id="btnHelp" title="Help">?</button>
+
+<div id="top" class="glass"><div class="dot">L</div><div style="min-width:0"><div class="room" id="roomName">Front walk</div><div class="note" id="roomNote">Welcome home</div></div></div>
+
+<div id="tools" class="glass">
+  <button id="tView" data-tip="Overview ⇄ walk (O)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-6h4v6"/></svg></button>
+  <button id="tCut" class="on" data-tip="Cutaway walls (C)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M5 20v-8h6v8M13 20v-5h6v5"/><path d="M4 9l16-4" stroke-dasharray="2 3"/></svg></button>
+  <button id="tRooms" data-tip="Rooms (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
+  <button id="tPhoto" data-tip="Real photo (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2.5h6L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+  <button id="tMap" class="on" data-tip="Minimap (M)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
+  <button id="tSet" data-tip="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+  <button id="tHelp" data-tip="Controls (?)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.4"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
 </div>
-<div id="map" class="panel"><canvas id="mapc" width="340" height="500"></canvas></div>
-<div id="cross" class="hidden"></div>
+
+<div id="dRooms" class="drawer glass hidden"><h3>Jump to a room</h3><div class="rooms" id="roomList"></div></div>
+<div id="dSet" class="drawer glass hidden">
+  <h3>Graphics</h3>
+  <div class="seg" id="quality"><button data-q="low">Fast</button><button data-q="mid">Balanced</button><button data-q="high">Beautiful</button></div>
+  <div class="row"><span>Frame rate</span><b id="fps">–</b></div>
+  <div class="row"><span>Auto-adjust quality</span><b><input type="checkbox" id="autoQ" checked></b></div>
+  <h3 style="margin-top:14px">Look speed</h3>
+  <input type="range" id="sens" min="1" max="10" value="5" style="width:100%">
+</div>
+<div id="dHelp" class="drawer glass hidden">
+  <h3>Controls</h3>
+  <div class="keys">
+    <span><b>Overview</b></span><span></span>
+    <span>Drag</span><span>orbit</span>
+    <span>Scroll / pinch</span><span>zoom toward cursor</span>
+    <span>Right-drag · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>pan</span>
+    <span><kbd>Q</kbd><kbd>E</kbd></span><span>rotate</span>
+    <span>Click a label · double-click floor</span><span>focus there</span>
+    <span><kbd>C</kbd></span><span>cutaway walls on/off</span>
+    <span><b>Walk</b></span><span></span>
+    <span>Drag</span><span>look around</span>
+    <span>Click floor</span><span>walk there</span>
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>walk · <kbd>Shift</kbd> faster</span>
+    <span><kbd>O</kbd></span><span>overview / dollhouse</span>
+    <span><kbd>R</kbd></span><span>rooms</span>
+    <span><kbd>P</kbd></span><span>real photo of this room</span>
+    <span><kbd>M</kbd></span><span>minimap (click it to teleport)</span>
+  </div>
+</div>
+
+<div id="map" class="glass"><canvas id="mapc" width="300" height="450"></canvas></div>
+<div id="hint" class="glass">Drag to look · click the floor or use WASD to walk</div>
+<div id="marker"></div>
 <div id="joy"><div class="knob"></div></div>
-<div id="photo"><img id="photoImg" alt=""><div class="cap" id="photoCap"></div><button id="photoClose">Close (Esc)</button></div>
-<div id="start">
-  <div class="card">
-    <h1>Our new house</h1>
-    <p>A walkable model of a one-story mid-century Eichler. The footprint comes from OpenStreetMap; the interior layout is my best reconstruction from a walkthrough video, so it's approximate.</p>
-    <div class="keys" id="keysDesktop">
-      <kbd>W A S D</kbd><span>walk (Shift to run)</span>
-      <kbd>Mouse</kbd><span>look around</span>
-      <kbd>O</kbd><span>overview / dollhouse view</span>
-      <kbd>P</kbd><span>real photo of the room you're in</span>
-      <kbd>Esc</kbd><span>release mouse</span>
-    </div>
-    <div class="keys hidden" id="keysTouch">
-      <span>Left stick</span><span>walk</span>
-      <span>Drag right side</span><span>look around</span>
-    </div>
-    <div class="go"><button class="primary" id="goWalk">Walk through</button><button id="goOver">Overview</button></div>
+<div id="photo"><img id="photoImg" alt=""><div class="cap" id="photoCap"></div><button id="photoClose">Close</button></div>
+
+<div id="intro">
+  <div class="card glass">
+    <div class="eyebrow">Palo Alto · Eichler</div>
+    <h1>Lindero House</h1>
+    <p>Walk through our new place. The footprint is from OpenStreetMap and the layout is reconstructed from a walkthrough video, so sizes are approximate.</p>
+    <div class="bar"><i id="loadBar"></i></div>
+    <div class="go"><button class="primary" id="goOver" disabled>Loading…</button><button id="goWalk" disabled>Walk through</button></div>
+    <small>Furniture is IKEA-style, modeled to catalog dimensions. Textures: Poly Haven (CC0).</small>
   </div>
 </div>
 
 <script type="module">
 import * as THREE from 'three';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -102,17 +197,14 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // ---------------------------------------------------------------------------
 const P = (x, h, y) => new THREE.Vector3(x, h, -y);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('gl'), powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
-document.body.prepend(renderer.domElement);
 
-const labelRenderer = new CSS2DRenderer({ element: document.getElementById('labels') });
-labelRenderer.setSize(innerWidth, innerHeight);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.05, 400);
@@ -234,7 +326,8 @@ Object.values(groups).forEach(g => scene.add(g));
 
 // ---------- collision boxes (plan coords) ----------
 const colliders = []; // {x1,y1,x2,y2}
-const trimJobs = [];  // walls to decorate with baseboards / casings / doors after helpers exist
+const trimJobs = [];
+const lightSpots = []; // virtual light positions; a small pool of real lights follows the camera  // walls to decorate with baseboards / casings / doors after helpers exist
 const addCol = (x1, y1, x2, y2) => colliders.push({ x1: Math.min(x1, x2), y1: Math.min(y1, y2), x2: Math.max(x1, x2), y2: Math.max(y1, y2) });
 
 // ---------- ceiling height functions ----------
@@ -549,7 +642,7 @@ const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 0.05), [M.woodDoor, 
 leaf.position.set(0.45, 1.05, 0); leaf.castShadow = true; fd.add(leaf); fd.rotation.y = -1.25; groups.house.add(fd);
 // interior lights (no shadows)
 for (const [x, y, i] of [[1.8, 2.5, 5], [4.5, -2.6, 4], [5.5, 2.6, 3], [-3.6, 0.6, 2], [-5.6, 3.3, 3], [-2.1, 3.3, 2.5], [-5.8, -2.1, 2.5], [-3.3, -2.1, 1.5], [4.0, -5.4, 2], [5.2, -9.0, 3], [8.8, -8.0, 3], [2.3, -7.8, 1.5], [0.3, -3.2, 2]]) {
-  const l = new THREE.PointLight(0xffe2bd, i, 7, 1.6); l.position.copy(P(x, 2.25, y)); groups.house.add(l);
+  lightSpots.push({ p: P(x, 2.25, y), i: i * 0.8, c: 0xffe2bd, d: 7 });
 }
 
 // ================= SITE =================
@@ -629,8 +722,8 @@ const hemi = new THREE.HemisphereLight(0xd4e6ff, 0x5b4a33, 1.25); scene.add(hemi
 scene.add(new THREE.AmbientLight(0xffffff, 0.25));
 const sun = new THREE.DirectionalLight(0xfff1dc, 2.6);
 sun.position.copy(P(-24, 30, -14)); sun.target.position.copy(P(1, 0, -2)); scene.add(sun.target);
-sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
-Object.assign(sun.shadow.camera, { left: -32, right: 32, top: 32, bottom: -32, near: 1, far: 90 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -20, right: 22, top: 22, bottom: -20, near: 5, far: 80 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
 scene.add(sun);
 // sky gradient
 { const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#5f97d6'); gr.addColorStop(.48, '#cfe2f3'); gr.addColorStop(.52, '#e8eef0'); gr.addColorStop(1, '#8c9a86'); g.fillStyle = gr; g.fillRect(0, 0, 4, 256);
@@ -638,13 +731,13 @@ scene.add(sun);
 scene.fog = new THREE.Fog(0xd8e4ec, 45, 140);
 // image-based lighting for reflections (steel, glass, glossy floor)
 { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(renderer), 0.04).texture; scene.environmentIntensity = 0.22; }
-hemi.intensity = 0.75; renderer.toneMappingExposure = 0.92;
+hemi.intensity = 0.95; renderer.toneMappingExposure = 0.92;
 // post-processing: ambient occlusion (desktop only)
 const lowPower = matchMedia('(pointer: coarse)').matches;
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 let gtao = null;
-if (!lowPower) { gtao = new GTAOPass(scene, camera, innerWidth, innerHeight); gtao.blendIntensity = 0.85; gtao.updateGtaoMaterial({ radius: 0.6, distanceExponent: 1.5, thickness: 1.2, scale: 1 }); composer.addPass(gtao); }
+if (!lowPower) { gtao = new GTAOPass(scene, camera, innerWidth, innerHeight); gtao.enabled = false; gtao.blendIntensity = 0.85; gtao.updateGtaoMaterial({ radius: 0.6, distanceExponent: 1.5, thickness: 1.2, scale: 1 }); composer.addPass(gtao); }
 composer.addPass(new OutputPass());
 
 // ================= FURNITURE (IKEA-style pieces at real catalog dimensions) =================
@@ -673,7 +766,7 @@ function part(g, lx, ly, w, d, z0, h, mat, r = 0) {
 }
 function solid(g) { g.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(g); addCol(b.min.x, -b.max.z, b.max.x, -b.min.z); return g; }
 const ROT = { N: 0, E: -Math.PI / 2, W: Math.PI / 2, S: Math.PI };
-function lampLight(g, lx, ly, z, i = 1.2) { const l = new THREE.PointLight(0xffc98a, i, 4.5, 1.8); l.position.set(lx, z, -ly); g.add(l); }
+function lampLight(g, lx, ly, z, i = 1.2) { lightSpots.push({ obj: g, local: new THREE.Vector3(lx, z, -ly), i: i * 1.4, c: 0xffc98a, d: 5 }); }
 function tableLamp(g, lx, ly, z0) {
   part(g, lx, ly, .12, .12, z0, .02, F.metalBlack); part(g, lx, ly, .02, .02, z0, .3, F.metalBlack);
   const sh = new THREE.Mesh(new THREE.CylinderGeometry(.11, .14, .2, 24, 1, true), F.shade); sh.position.set(lx, z0 + .36, -ly); g.add(sh);
@@ -717,6 +810,7 @@ function armchair(x, y, rot) {
   for (const lx of [-.33, .33]) part(g, lx, .45, .04, .7, .3, .25, F.walnut, .01);
   return solid(g);
 }
+const BOOK_MATS = [0x8c2f2f, 0x2f4f7c, 0xd8c8a8, 0x3f6b4a, 0x1f1f1f, 0xc27a2c, 0x6b4f7c, 0xe8e4da, 0x55606b].map(c => std({ color: c, roughness: .8 }));
 // BILLY-style bookcase (80 x 28 x 202) with books
 function bookcase(x, y, rot) {
   const g = furn(x, y, rot);
@@ -724,8 +818,8 @@ function bookcase(x, y, rot) {
   for (const lx of [-.39, .39]) part(g, lx, .14, .02, .28, 0, 2.02, F.whiteLam);
   const shelves = [0.06, 0.42, 0.78, 1.14, 1.5, 1.86, 2.0];
   for (const z of shelves) part(g, 0, .14, .78, .28, z, .02, F.whiteLam);
-  const cols = [0x8c2f2f, 0x2f4f7c, 0xd8c8a8, 0x3f6b4a, 0x1f1f1f, 0xc27a2c, 0x6b4f7c, 0xe8e4da, 0x55606b];
-  for (let si = 0; si < 5; si++) { let lx = -.37; const z = shelves[si] + .02; while (lx < .3) { const w = .025 + rnd() * .03, h = .2 + rnd() * .1; if (rnd() < .12) { lx += .06; continue; } part(g, lx + w / 2, .15 + rnd() * .02, w, .2, z, h, std({ color: cols[Math.floor(rnd() * cols.length)], roughness: .8 })); lx += w + .003; } }
+  const cols = BOOK_MATS;
+  for (let si = 0; si < 5; si++) { let lx = -.37; const z = shelves[si] + .02; while (lx < .3) { const w = .025 + rnd() * .03, h = .2 + rnd() * .1; if (rnd() < .12) { lx += .06; continue; } part(g, lx + w / 2, .15 + rnd() * .02, w, .2, z, h, cols[Math.floor(rnd() * cols.length)]); lx += w + .003; } }
   return solid(g);
 }
 // LACK-style coffee table (90 x 55 x 45)
@@ -784,190 +878,405 @@ bookcase(7.12, -6.5, ROT.E);
 
 // ================= ROOMS =================
 const ROOMS = [
-  { name: 'Kitchen', r: [[1.2, -4.2, 7.0, -0.8]], photo: 'kitchen', note: 'Stainless counters, gas range, heated floor' },
-  { name: 'Entry', r: [[-0.6, -4.2, 1.2, -2.2]], photo: 'entry' },
-  { name: 'Living room', r: [[-0.6, -2.2, 4.2, 5.4]], photo: 'living', note: 'Fireplace + walls of glass to the deck' },
-  { name: 'Dining', r: [[4.2, -0.8, 7.0, 5.4]], photo: 'fireplace' },
-  { name: 'Hallway', r: [[-7.4, 0.0, -0.6, 1.2]], photo: 'hall' },
-  { name: 'Bedroom / office', r: [[-7.4, -4.2, -4.2, 0.0]], photo: 'bed3', note: 'Mini-split' },
-  { name: 'Bathroom (hall)', r: [[-4.2, -4.2, -2.4, 0.0]], photo: 'bath2' },
-  { name: 'Closet', r: [[-2.4, -4.2, -0.6, 0.0]], photo: 'closet' },
-  { name: 'Primary bedroom', r: [[-7.4, 1.2, -3.6, 5.4]], photo: 'primary', note: 'Slider to the backyard' },
-  { name: 'Bedroom', r: [[-3.6, 1.2, -0.6, 5.4]], photo: 'bed2' },
-  { name: 'Laundry / pantry', r: [[1.1, -6.4, 7.0, -4.3]], photo: 'laundry' },
-  { name: 'Bathroom', r: [[1.1, -9.2, 3.4, -6.4]], photo: 'bath1', note: 'Heated floor' },
-  { name: 'Storage', r: [[1.1, -11.6, 3.4, -9.2]] },
-  { name: 'Office / bedroom', r: [[3.4, -11.6, 7.0, -6.4]], photo: 'office', note: 'Mini-split, skylight' },
-  { name: 'Bonus room', r: [[7.0, -11.6, 10.5, -4.3]], photo: 'bonus', note: 'Flexible office / bonus space' },
-  { name: 'Carport', r: [[3.0, -17.7, 10.9, -11.6]], outdoor: true },
-  { name: 'Deck', r: [[-3.6, 5.4, 7.6, 8.4]], photo: 'deck', outdoor: true },
-  { name: 'Patio & pond', r: [[-9.6, 5.4, -3.6, 15.2]], photo: 'backyard', outdoor: true },
-  { name: 'Backyard', r: [[-9.6, 5.4, 12, 15.2]], photo: 'backyard', outdoor: true },
-  { name: 'Front walk', r: [[-1.5, -21.3, 3.4, -4.2]], photo: 'walkway', outdoor: true },
-  { name: 'Front yard', r: [[-60, -60, 60, 60]], photo: 'frontyard', outdoor: true },
+  { name: 'Kitchen', r: [[1.2, -4.2, 7.0, -0.8]], photo: 'kitchen', note: 'Stainless counters · gas range · heated floor', spot: [3.3, -2.4, -0.9] },
+  { name: 'Entry', r: [[-0.6, -4.2, 1.2, -2.2]], photo: 'entry', spot: [0.3, -3.6, 0] },
+  { name: 'Living room', r: [[-0.6, -2.2, 4.2, 5.4]], photo: 'living', note: 'Fireplace · walls of glass to the deck', spot: [3.9, 0.2, 0.75] },
+  { name: 'Dining', r: [[4.2, -0.8, 7.0, 5.4]], photo: 'fireplace', note: 'Seats six', spot: [5.6, 0.0, 0.2] },
+  { name: 'Hallway', r: [[-7.4, 0.0, -0.6, 1.2]], photo: 'hall', spot: [-1.2, 0.6, 1.57] },
+  { name: 'Bedroom 3', r: [[-7.4, -4.2, -4.2, 0.0]], photo: 'bed3', note: '≈145 sq ft · mini-split', spot: [-4.7, -0.6, 2.2] },
+  { name: 'Hall bath', r: [[-4.2, -4.2, -2.4, 0.0]], photo: 'bath2', spot: [-3.3, -0.5, 3.14] },
+  { name: 'Closet', r: [[-2.4, -4.2, -0.6, 0.0]], photo: 'closet', hide: true },
+  { name: 'Bedroom 2', r: [[-7.4, 1.2, -3.6, 5.4]], photo: 'primary', note: '≈172 sq ft · slider to the backyard', spot: [-4.1, 4.8, 2.5] },
+  { name: 'Bedroom 4', r: [[-3.6, 1.2, -0.6, 5.4]], photo: 'bed2', note: '≈136 sq ft', spot: [-1.0, 1.7, 0.9] },
+  { name: 'Laundry / pantry', r: [[1.1, -6.4, 7.0, -4.3]], photo: 'laundry', spot: [2.0, -4.0, Math.PI] },
+  { name: 'Bathroom', r: [[1.1, -9.2, 3.4, -6.4]], photo: 'bath1', note: 'Heated floor', spot: [2.4, -6.7, Math.PI] },
+  { name: 'Storage', r: [[1.1, -11.6, 3.4, -9.2]], hide: true },
+  { name: 'Bedroom 1', r: [[3.4, -11.6, 7.0, -6.4]], photo: 'office', note: '≈201 sq ft · mini-split · skylight', spot: [4.4, -6.9, -2.6] },
+  { name: 'Bonus room', r: [[7.0, -11.6, 10.5, -4.3]], photo: 'bonus', note: 'Home office', spot: [9.8, -5.0, 2.4] },
+  { name: 'Carport', r: [[3.0, -17.7, 10.9, -11.6]], outdoor: true, hide: true },
+  { name: 'Deck', r: [[-3.6, 5.4, 7.6, 8.4]], photo: 'deck', outdoor: true, spot: [3.0, 8.0, Math.PI] },
+  { name: 'Patio & pond', r: [[-9.6, 5.4, -3.6, 15.2]], photo: 'backyard', outdoor: true, spot: [-4.5, 9.0, 0.9] },
+  { name: 'Backyard', r: [[-9.6, 5.4, 12, 15.2]], photo: 'backyard', outdoor: true, hide: true },
+  { name: 'Front walk', r: [[-1.5, -21.3, 3.4, -4.2]], photo: 'walkway', outdoor: true, spot: [0.3, -15, 0] },
+  { name: 'Front yard', r: [[-60, -60, 60, 60]], photo: 'frontyard', outdoor: true, hide: true },
 ];
 const inRect = (x, y, [a, b, c, d]) => x >= a && x <= c && y >= b && y <= d;
 const roomAt = (x, y) => ROOMS.find(R => R.r.some(r => inRect(x, y, r)));
 const center = R => { const [a, b, c, d] = R.r[0]; return [(a + c) / 2, (b + d) / 2]; };
 
-// overview labels
-for (const R of ROOMS) {
-  if (R.outdoor || R.name === 'Storage' || R.name === 'Closet') continue;
-  const el = document.createElement('div'); el.className = 'rlabel'; el.textContent = R.name;
-  el.onclick = () => { goTo(R); setMode('walk'); };
-  const o = new CSS2DObject(el); const [cx, cy] = center(R); o.position.copy(P(cx, R.outdoor ? 0.3 : 1.2, cy)); o.visible = false; scene.add(o); R.label = o;
-}
-const jump = document.getElementById('jump');
-ROOMS.filter(R => R.name !== 'Front yard').forEach((R, i) => { const op = document.createElement('option'); op.value = i; op.textContent = R.name; jump.appendChild(op); });
-jump.onchange = () => { const R = ROOMS.filter(R => R.name !== 'Front yard')[jump.value]; if (R) { goTo(R); setMode('walk'); } jump.value = ''; jump.blur(); };
-
-// ================= PLAYER / CONTROLS =================
-const EYE = 1.62, RAD = 0.24;
-const player = { x: 0.3, y: -18.5, yaw: 0, pitch: 0 };
-const isTouch = matchMedia('(pointer: coarse)').matches;
-const plc = new PointerLockControls(camera, renderer.domElement);
-const orbit = new OrbitControls(camera, renderer.domElement);
-orbit.enabled = false; orbit.enableDamping = true; orbit.maxPolarAngle = Math.PI * 0.47; orbit.minDistance = 6; orbit.maxDistance = 70;
-orbit.target.copy(P(1.5, 0, -3));
-let mode = 'start';
-const keys = {};
-
-function goTo(R) {
-  const [cx, cy] = center(R);
-  player.x = cx; player.y = cy;
-  if (R.name === 'Front walk') { player.x = 0.3; player.y = -14; player.yaw = 0; }
-}
-function applyCam() {
-  camera.position.copy(P(player.x, EYE, player.y));
-  camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
-}
-function setMode(m) {
-  mode = m;
-  const over = m === 'over';
-  groups.overhead.visible = !over;
-  ROOMS.forEach(R => R.label && (R.label.visible = over));
-  orbit.enabled = over;
-  document.getElementById('btnView').textContent = over ? 'Walk' : 'Overview';
-  document.getElementById('cross').classList.toggle('hidden', over || isTouch);
-  document.getElementById('joy').style.display = (!over && isTouch) ? 'block' : 'none';
-  if (over) {
-    if (document.pointerLockElement) plc.unlock();
-    camera.position.copy(P(6, 17, -17)); orbit.target.copy(P(1.5, 0, -2.5)); orbit.update();
-  } else if (m === 'walk') {
-    applyCam();
-    if (!isTouch) { try { plc.lock(); } catch (e) {} }
+// ================= PERFORMANCE: merge static geometry, pool lights, static shadows =================
+// Interior lamp/room light positions -> resolved to world space. Only a small pool of real lights follows the camera.
+for (const s of lightSpots) if (s.obj) { s.obj.updateMatrixWorld(true); s.p = s.local.clone().applyMatrix4(s.obj.matrixWorld); }
+function mergeStatic(root) {
+  root.updateMatrixWorld(true);
+  const buckets = new Map(), dead = [];
+  root.traverse(o => {
+    if (!o.isMesh || Array.isArray(o.material) || o.userData.keep) return;
+    let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    g.applyMatrix4(o.matrixWorld); g.clearGroups(); g.morphAttributes = {};
+    const key = o.material.uuid + (o.castShadow ? '|c' : '|n');
+    if (!buckets.has(key)) buckets.set(key, { mat: o.material, cast: o.castShadow, geos: [] });
+    buckets.get(key).geos.push(g); dead.push(o);
+  });
+  for (const o of dead) o.parent.remove(o);
+  // drop now-empty helper groups' children references are fine; add merged meshes at root (root is at the origin)
+  for (const { mat, cast, geos } of buckets.values()) {
+    const merged = mergeGeometries(geos, false); if (!merged) continue;
+    merged.computeBoundingSphere();
+    const m = new THREE.Mesh(merged, mat); m.castShadow = cast; m.receiveShadow = true; m.matrixAutoUpdate = false; root.add(m);
   }
 }
-document.getElementById('goWalk').onclick = () => { document.getElementById('start').classList.add('hidden'); setMode('walk'); };
-document.getElementById('goOver').onclick = () => { document.getElementById('start').classList.add('hidden'); setMode('over'); };
-document.getElementById('btnView').onclick = () => setMode(mode === 'over' ? 'walk' : 'over');
-document.getElementById('btnHelp').onclick = () => { if (document.pointerLockElement) plc.unlock(); document.getElementById('start').classList.remove('hidden'); };
-if (isTouch) { document.getElementById('keysDesktop').classList.add('hidden'); document.getElementById('keysTouch').classList.remove('hidden'); }
-renderer.domElement.addEventListener('click', () => { if (mode === 'walk' && !isTouch && !document.pointerLockElement) plc.lock(); });
-plc.addEventListener('change', () => { const e = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ'); player.yaw = e.y; player.pitch = e.x; });
+const drawBefore = (() => { let n = 0; scene.traverse(o => { if (o.isMesh) n++; }); return n; })();
+Object.values(groups).forEach(mergeStatic);
+const drawAfter = (() => { let n = 0; scene.traverse(o => { if (o.isMesh) n++; }); return n; })();
+console.info(`meshes: ${drawBefore} -> ${drawAfter}`);
+
+renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true; // the sun never moves: render shadows once
+
+const POOL = 4;
+const pool = Array.from({ length: POOL }, () => { const l = new THREE.PointLight(0xffd7a8, 0, 6, 1.7); scene.add(l); return l; });
+let poolSize = POOL;
+function updateLightPool() {
+  const cp = camera.position;
+  const near = lightSpots.map(s => [s, s.p.distanceToSquared(cp)]).sort((a, b) => a[1] - b[1]);
+  pool.forEach((l, i) => {
+    const e = near[i]; if (!e || i >= poolSize || mode === 'over') { l.intensity = 0; return; }
+    const [s, d2] = e; l.position.copy(s.p); l.color.setHex(s.c); l.distance = s.d;
+    l.intensity = s.i * Math.max(0, Math.min(1, (40 - d2) / 25)); // fade far ones so swaps are invisible
+  });
+}
+
+// ================= CUTAWAY (dollhouse) =================
+// Clip every house material (walls, glass, trim, furniture) above waist height while in overview.
+const cutPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e5);
+renderer.localClippingEnabled = true;
+{ const mats = new Set(); groups.house.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => mats.add(m)); });
+  for (const m of mats) { m.clippingPlanes = [cutPlane]; m.clipShadows = false; m.needsUpdate = true; } }
+let cutOn = true;
+function setCut(on) { cutPlane.constant = on ? 1.45 : 1e5; renderer.shadowMap.needsUpdate = true; dirty = true; }
+
+// ================= QUALITY =================
+const QUALITY = {
+  low: { pr: 1, ao: false, lights: 2, aa: false },
+  mid: { pr: Math.min(devicePixelRatio, 1.5), ao: false, lights: 4, aa: true },
+  high: { pr: Math.min(devicePixelRatio, 2), ao: true, lights: 4, aa: true },
+};
+const isTouch = matchMedia('(pointer: coarse)').matches;
+let quality = isTouch ? 'low' : 'mid';
+try { quality = localStorage.getItem('lindero.q') || quality; } catch (e) {}
+function setQuality(q) {
+  quality = q; const Q = QUALITY[q];
+  renderer.setPixelRatio(Q.pr); renderer.setSize(innerWidth, innerHeight, false);
+  composer.setPixelRatio(Q.pr); composer.setSize(innerWidth, innerHeight);
+  if (gtao) gtao.enabled = Q.ao;
+  poolSize = Q.lights;
+  document.querySelectorAll('#quality button').forEach(b => b.classList.toggle('on', b.dataset.q === q));
+  try { localStorage.setItem('lindero.q', q); } catch (e) {}
+  dirty = true;
+}
+
+// ================= UI =================
+const $ = id => document.getElementById(id);
+const labelRenderer = new CSS2DRenderer({ element: $('labels') });
+labelRenderer.setSize(innerWidth, innerHeight);
+for (const R of ROOMS) {
+  if (R.outdoor || R.hide) continue;
+  const el = document.createElement('div'); el.className = 'rlabel'; el.textContent = R.name;
+  el.addEventListener('click', () => focusRoom(R));
+  el.addEventListener('dblclick', () => flyTo(R));
+  const o = new CSS2DObject(el); const [cx, cy] = center(R); o.position.copy(P(cx, 1.3, cy)); o.visible = false; scene.add(o); R.label = o;
+}
+const list = $('roomList');
+for (const R of ROOMS.filter(R => !R.hide)) {
+  const b = document.createElement('button');
+  b.innerHTML = `<div class="thumb" style="background-image:url(photos/${R.photo}.jpg)"></div><div class="nm">${R.name}</div>`;
+  b.onclick = () => { (mode === 'over' ? focusRoom : flyTo)(R); closeDrawers(); }; R.btn = b; list.appendChild(b);
+}
+const drawers = { tRooms: 'dRooms', tSet: 'dSet', tHelp: 'dHelp' };
+function closeDrawers(except) { for (const [t, d] of Object.entries(drawers)) if (t !== except) { $(d).classList.add('hidden'); $(t).classList.remove('on'); } }
+for (const [t, d] of Object.entries(drawers)) $(t).onclick = () => { const open = $(d).classList.contains('hidden'); closeDrawers(); $(d).classList.toggle('hidden', !open); $(t).classList.toggle('on', open); };
+$('tView').onclick = () => setMode(mode === 'over' ? 'walk' : 'over');
+$('tCut').onclick = () => { cutOn = !cutOn; $('tCut').classList.toggle('on', cutOn); setCut(mode === 'over' && cutOn); };
+$('tPhoto').onclick = () => showPhoto();
+$('tMap').onclick = () => { const h = $('map').classList.toggle('hidden'); $('tMap').classList.toggle('on', !h); };
+document.querySelectorAll('#quality button').forEach(b => b.onclick = () => { $('autoQ').checked = false; setQuality(b.dataset.q); });
+let sens = 5; $('sens').oninput = e => sens = +e.target.value;
+
+// intro / loading
+const mgr = THREE.DefaultLoadingManager;
+let loaded = false;
+mgr.onProgress = (u, a, b) => { $('loadBar').style.width = (a / b * 100).toFixed(0) + '%'; };
+mgr.onLoad = () => { if (loaded) return; loaded = true; $('loadBar').style.width = '100%'; renderer.shadowMap.needsUpdate = true; dirty = true;
+  $('goWalk').disabled = $('goOver').disabled = false; $('goOver').textContent = 'Explore the house'; $('goWalk').textContent = 'Walk through'; };
+setTimeout(() => mgr.onLoad(), 12000); // never block on a slow texture
+$('goWalk').onclick = () => { $('intro').classList.add('out'); setMode('walk'); hintLater(); };
+$('tView').addEventListener('click', () => setTimeout(hintLater, 50));
+$('goOver').onclick = () => { $('intro').classList.add('out'); setMode('over'); hintLater(); };
+function hintLater() { $('hint').classList.remove('fade');
+  $('hint').textContent = mode === 'over'
+    ? (isTouch ? 'Drag to orbit · pinch to zoom · two fingers to pan · tap a room' : 'Drag to orbit · scroll to zoom · right-drag or WASD to pan · click a room')
+    : (isTouch ? 'Drag to look · tap the floor or use the stick to walk' : 'Drag to look · click the floor or use WASD to walk');
+  setTimeout(() => $('hint').classList.add('fade'), 7000); }
+
+// ================= CAMERA / PLAYER =================
+const EYE = 1.62, RAD = 0.24;
+const player = { x: 0.3, y: -15, yaw: 0, pitch: -0.04 };
+const view = { yaw: 0, pitch: -0.04 };           // smoothed values actually applied to the camera
+let mode = 'intro', dirty = true, fly = null, walkTarget = null;
+const orbit = new OrbitControls(camera, renderer.domElement);
+orbit.enabled = false; orbit.enableDamping = true; orbit.dampingFactor = 0.14; orbit.rotateSpeed = 0.9; orbit.zoomSpeed = 1.2; orbit.panSpeed = 1.1;
+orbit.zoomToCursor = true; orbit.screenSpacePanning = false; orbit.maxPolarAngle = Math.PI * 0.47; orbit.minDistance = 2.5; orbit.maxDistance = 45;
+orbit.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+orbit.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+orbit.addEventListener('change', () => dirty = true);
+const keys = {};
+
+function applyCam() { camera.position.copy(P(player.x, EYE, player.y)); camera.rotation.set(view.pitch, view.yaw, 0, 'YXZ'); }
+function setMode(m) {
+  const prev = mode; mode = m;
+  const over = m === 'over';
+  groups.overhead.visible = !over;
+  setCut(over && cutOn);
+  ROOMS.forEach(R => R.label && (R.label.visible = over));
+  orbit.enabled = over;
+  $('tView').classList.toggle('on', over);
+  $('joy').style.display = (!over && isTouch) ? 'block' : 'none';
+  if (over) {
+    const from = camera.position.clone(), fromQ = camera.quaternion.clone();
+    const to = P(3.5, 15, -13); orbit.target.copy(P(1.5, 0, -2.5));
+    const tmp = new THREE.PerspectiveCamera(); tmp.position.copy(to); tmp.lookAt(orbit.target);
+    fly = { t: 0, dur: prev === 'intro' ? 0.01 : 0.9, from, to, fromQ, toQ: tmp.quaternion.clone(), done: () => orbit.update() };
+  } else if (prev === 'over') {
+    const from = camera.position.clone(), fromQ = camera.quaternion.clone();
+    view.yaw = player.yaw; view.pitch = player.pitch;
+    const tmp = new THREE.PerspectiveCamera(); tmp.position.copy(P(player.x, EYE, player.y)); tmp.rotation.set(view.pitch, view.yaw, 0, 'YXZ');
+    fly = { t: 0, dur: 0.9, from, to: tmp.position.clone(), fromQ, toQ: tmp.quaternion.clone(), done: applyCam };
+  } else { view.yaw = player.yaw; view.pitch = player.pitch; applyCam(); }
+  dirty = true;
+}
+function flyTo(R) {
+  const [cx, cy] = center(R); const s = R.spot || [cx, cy, player.yaw];
+  player.x = s[0]; player.y = s[1]; player.yaw = s[2]; player.pitch = -0.05; walkTarget = null;
+  if (mode === 'over') { setMode('walk'); return; }
+  const from = camera.position.clone(), fromQ = camera.quaternion.clone();
+  view.yaw = player.yaw; view.pitch = player.pitch;
+  const tmp = new THREE.PerspectiveCamera(); tmp.position.copy(P(player.x, EYE, player.y)); tmp.rotation.set(view.pitch, view.yaw, 0, 'YXZ');
+  fly = { t: 0, dur: 0.7, from, to: tmp.position.clone(), fromQ, toQ: tmp.quaternion.clone(), done: applyCam };
+}
+// Overview: glide the orbit target to a room, keeping the current viewing angle
+function focusRoom(R, pt) {
+  if (R) { $('roomName').textContent = R.name; $('roomNote').textContent = R.note || (R.photo ? 'Tap the camera for the real photo' : ''); focused = R; }
+  const [cx, cy] = pt || center(R);
+  const tgt = P(cx, 0, cy), off = camera.position.clone().sub(orbit.target);
+  const dist = pt ? off.length() : Math.min(off.length(), R && !R.outdoor ? 9 : 16); off.setLength(dist);
+  const from = camera.position.clone(), fromT = orbit.target.clone(), to = tgt.clone().add(off);
+  orbitFly = { t: 0, dur: 0.6, from, to, fromT, toT: tgt };
+}
+let orbitFly = null, focused = null;
+function overviewKeys(dt) {
+  let f = 0, s = 0, rot = 0, zoom = 0;
+  if (keys.KeyW || keys.ArrowUp) f += 1; if (keys.KeyS || keys.ArrowDown) f -= 1;
+  if (keys.KeyD || keys.ArrowRight) s += 1; if (keys.KeyA || keys.ArrowLeft) s -= 1;
+  if (keys.KeyQ) rot += 1; if (keys.KeyE) rot -= 1;
+  if (keys.Equal || keys.NumpadAdd) zoom -= 1; if (keys.Minus || keys.NumpadSubtract) zoom += 1;
+  if (!f && !s && !rot && !zoom) return;
+  orbitFly = null;
+  const off = camera.position.clone().sub(orbit.target);
+  const fwd = orbit.target.clone().sub(camera.position).setY(0).normalize(), right = new THREE.Vector3().crossVectors(fwd, camera.up).normalize();
+  const sp = Math.max(4, off.length() * 0.9) * dt * (keys.ShiftLeft || keys.ShiftRight ? 2.2 : 1);
+  const mv = fwd.multiplyScalar(f * sp).add(right.multiplyScalar(s * sp));
+  orbit.target.add(mv); camera.position.add(mv);
+  if (rot) { off.applyAxisAngle(camera.up, rot * dt * 1.6); camera.position.copy(orbit.target).add(off); }
+  if (zoom) { off.multiplyScalar(1 + zoom * dt * 1.5); off.clampLength(orbit.minDistance, orbit.maxDistance); camera.position.copy(orbit.target).add(off); }
+}
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+// ---- pointer: drag to look, click/tap floor to walk ----
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+let drag = null;
+const cv = renderer.domElement;
+cv.addEventListener('pointerdown', e => {
+  if (mode !== 'walk' || (isTouch && e.pointerType === 'touch' && e.clientX < 160 && e.clientY > innerHeight - 160)) return;
+  drag = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now() }; cv.setPointerCapture(e.pointerId); cv.classList.add('dragging');
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const k = 0.0016 * sens * (e.pointerType === 'touch' ? 1.4 : 1);
+  player.yaw += (e.clientX - drag.x) * k; player.pitch = Math.max(-1.3, Math.min(1.3, player.pitch + (e.clientY - drag.y) * k));
+  drag.x = e.clientX; drag.y = e.clientY; dirty = true;
+});
+cv.addEventListener('pointerup', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const moved = Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy), quick = performance.now() - drag.t < 350;
+  drag = null; cv.classList.remove('dragging');
+  if (moved < 6 && quick) {
+    ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
+    const hit = new THREE.Vector3(); if (ray.ray.intersectPlane(floorPlane, hit) && hit.distanceTo(camera.position) < 30) {
+      walkTarget = { x: hit.x, y: -hit.z, stuck: 0 };
+      const mk = $('marker'); mk.style.left = e.clientX + 'px'; mk.style.top = e.clientY + 'px'; mk.style.opacity = 1; setTimeout(() => mk.style.opacity = 0, 450);
+    }
+  }
+});
+// lose the drag if the pointer leaves
+cv.addEventListener('pointercancel', () => { drag = null; cv.classList.remove('dragging'); });
+cv.addEventListener('dblclick', e => {
+  ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
+  const hit = new THREE.Vector3(); if (!ray.ray.intersectPlane(floorPlane, hit)) return;
+  if (mode === 'over') focusRoom(roomAt(hit.x, -hit.z), [hit.x, -hit.z]);
+});
+
 
 addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
   keys[e.code] = true;
   if (e.code === 'KeyO') setMode(mode === 'over' ? 'walk' : 'over');
   if (e.code === 'KeyP') showPhoto();
-  if (e.code === 'KeyM') document.getElementById('map').classList.toggle('hidden');
-  if (e.code === 'Escape') hidePhoto();
+  if (e.code === 'KeyR') $('tRooms').click();
+  if (e.code === 'KeyM') $('tMap').click();
+  if (e.code === 'KeyC') $('tCut').click();
+  if (e.code === 'KeyF') setMode(mode === 'over' ? 'walk' : 'over');
+  if (e.code === 'Escape') { hidePhoto(); closeDrawers(); }
+  if (/^(Key[WASD]|Arrow)/.test(e.code)) walkTarget = null;
 });
 addEventListener('keyup', e => keys[e.code] = false);
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-// touch: joystick + look
-const joy = { x: 0, y: 0, id: null }; const look = { id: null, x: 0, y: 0 };
-const joyEl = document.getElementById('joy'), knob = joyEl.querySelector('.knob');
-joyEl.addEventListener('touchstart', e => { joy.id = e.changedTouches[0].identifier; e.preventDefault(); }, { passive: false });
-addEventListener('touchmove', e => {
-  for (const t of e.changedTouches) {
-    if (t.identifier === joy.id) { const r = joyEl.getBoundingClientRect(); let dx = (t.clientX - r.left - 60) / 50, dy = (t.clientY - r.top - 60) / 50; const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; } joy.x = dx; joy.y = dy; knob.style.transform = `translate(${dx * 40}px,${dy * 40}px)`; }
-    if (t.identifier === look.id && mode === 'walk') { player.yaw -= (t.clientX - look.x) * 0.005; player.pitch = Math.max(-1.4, Math.min(1.4, player.pitch - (t.clientY - look.y) * 0.005)); look.x = t.clientX; look.y = t.clientY; }
-  }
-}, { passive: true });
-renderer.domElement.addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (look.id === null) { look.id = t.identifier; look.x = t.clientX; look.y = t.clientY; } }, { passive: true });
-addEventListener('touchend', e => { for (const t of e.changedTouches) { if (t.identifier === joy.id) { joy.id = null; joy.x = joy.y = 0; knob.style.transform = ''; } if (t.identifier === look.id) look.id = null; } });
+// joystick (touch)
+const joy = { x: 0, y: 0, id: null }, joyEl = $('joy'), knob = joyEl.querySelector('.knob');
+joyEl.addEventListener('pointerdown', e => { joy.id = e.pointerId; joyEl.setPointerCapture(e.pointerId); walkTarget = null; });
+joyEl.addEventListener('pointermove', e => { if (e.pointerId !== joy.id) return; const r = joyEl.getBoundingClientRect(); let dx = (e.clientX - r.left - 58) / 46, dy = (e.clientY - r.top - 58) / 46; const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; } joy.x = dx; joy.y = dy; knob.style.transform = `translate(${dx * 38}px,${dy * 38}px)`; });
+const joyEnd = () => { joy.id = null; joy.x = joy.y = 0; knob.style.transform = ''; };
+joyEl.addEventListener('pointerup', joyEnd); joyEl.addEventListener('pointercancel', joyEnd);
 
+// collision via a uniform grid (fast lookups instead of scanning every box)
+const CELL = 2, grid = new Map();
+for (const c of colliders) for (let gx = Math.floor(c.x1 / CELL); gx <= Math.floor(c.x2 / CELL); gx++) for (let gy = Math.floor(c.y1 / CELL); gy <= Math.floor(c.y2 / CELL); gy++) { const k = gx + ',' + gy; if (!grid.has(k)) grid.set(k, []); grid.get(k).push(c); }
 function collide() {
-  for (let pass = 0; pass < 2; pass++) for (const c of colliders) {
+  const gx = Math.floor(player.x / CELL), gy = Math.floor(player.y / CELL); const seen = new Set();
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const c of grid.get((gx + i) + ',' + (gy + j)) || []) {
+    if (seen.has(c)) continue; seen.add(c);
     const nx = Math.max(c.x1, Math.min(player.x, c.x2)), ny = Math.max(c.y1, Math.min(player.y, c.y2));
     const dx = player.x - nx, dy = player.y - ny, d2 = dx * dx + dy * dy;
     if (d2 < RAD * RAD) {
       if (d2 > 1e-9) { const d = Math.sqrt(d2); player.x = nx + dx / d * RAD; player.y = ny + dy / d * RAD; }
-      else { // inside box: push out along shortest axis
-        const opts = [[c.x1 - RAD - player.x, 0], [c.x2 + RAD - player.x, 0], [0, c.y1 - RAD - player.y], [0, c.y2 + RAD - player.y]].sort((a, b) => Math.hypot(...a) - Math.hypot(...b));
-        player.x += opts[0][0]; player.y += opts[0][1];
-      }
+      else { const o = [[c.x1 - RAD - player.x, 0], [c.x2 + RAD - player.x, 0], [0, c.y1 - RAD - player.y], [0, c.y2 + RAD - player.y]].sort((a, b) => Math.hypot(...a) - Math.hypot(...b))[0]; player.x += o[0]; player.y += o[1]; }
     }
   }
 }
 
 // ---------- photo viewer ----------
 let currentRoom = null;
-const photoEl = document.getElementById('photo');
 function showPhoto() {
-  if (!currentRoom || !currentRoom.photo) return;
-  if (document.pointerLockElement) plc.unlock();
-  document.getElementById('photoImg').src = `photos/${currentRoom.photo}.jpg`;
-  document.getElementById('photoCap').textContent = currentRoom.name + ' — frame from the walkthrough video';
-  photoEl.style.display = 'flex';
+  const R = currentRoom && currentRoom.photo ? currentRoom : null; if (!R) return;
+  $('photoImg').src = `photos/${R.photo}.jpg`; $('photoCap').textContent = R.name + ' · frame from the walkthrough video'; $('photo').style.display = 'flex';
 }
-function hidePhoto() { photoEl.style.display = 'none'; }
-document.getElementById('photoClose').onclick = () => { hidePhoto(); if (mode === 'walk' && !isTouch) plc.lock(); };
-document.getElementById('btnPhoto').onclick = showPhoto;
+function hidePhoto() { $('photo').style.display = 'none'; }
+$('photoClose').onclick = hidePhoto; $('photo').onclick = e => { if (e.target.id === 'photo') hidePhoto(); };
 
-// ---------- minimap ----------
-const mc = document.getElementById('mapc'), mg = mc.getContext('2d');
+// ---------- minimap (static layer drawn once) ----------
+const mc = $('mapc'), mg = mc.getContext('2d');
 const MAP = { x1: -10.5, x2: 12.5, y1: -19, y2: 15.5 };
 const mx = x => (x - MAP.x1) / (MAP.x2 - MAP.x1) * mc.width, my = y => (MAP.y2 - y) / (MAP.y2 - MAP.y1) * mc.height;
-function drawMap() {
-  mg.clearRect(0, 0, mc.width, mc.height);
-  mg.fillStyle = 'rgba(80,120,60,.35)'; mg.fillRect(0, 0, mc.width, mc.height);
-  for (const R of ROOMS) { if (R.outdoor) continue; const [a, b, c, d] = R.r[0]; mg.fillStyle = R === currentRoom ? 'rgba(217,72,59,.55)' : 'rgba(230,215,195,.85)'; mg.fillRect(mx(a), my(d), mx(c) - mx(a), my(b) - my(d)); }
-  mg.fillStyle = 'rgba(150,150,150,.6)'; mg.fillRect(mx(-3.6), my(8.4), mx(7.6) - mx(-3.6), my(5.4) - my(8.4));
-  mg.fillStyle = 'rgba(120,90,80,.6)'; mg.fillRect(mx(3.0), my(-11.6), mx(10.9) - mx(3.0), my(-17.7) - my(-11.6));
-  mg.fillStyle = 'rgba(40,80,95,.9)'; mg.beginPath(); mg.ellipse(mx(-6.2), my(12.4), 2.1 * mc.width / 23, 1.7 * mc.height / 34.5, 0, 0, Math.PI * 2); mg.fill();
-  mg.fillStyle = '#2b2b2b';
-  for (const c of colliders) { if (c.x2 - c.x1 > 0.3 && c.y2 - c.y1 > 0.3) continue; mg.fillRect(mx(c.x1), my(c.y2), Math.max(1.5, mx(c.x2) - mx(c.x1)), Math.max(1.5, my(c.y1) - my(c.y2))); }
-  const px = mx(player.x), py = my(player.y);
-  mg.fillStyle = '#d9483b'; mg.beginPath(); mg.arc(px, py, 6, 0, Math.PI * 2); mg.fill();
-  const fx = -Math.sin(player.yaw), fy = Math.cos(player.yaw); // plan forward
-  mg.strokeStyle = '#d9483b'; mg.lineWidth = 3; mg.beginPath(); mg.moveTo(px, py); mg.lineTo(px + fx * 16, py - fy * 16); mg.stroke();
-  mg.fillStyle = '#fff'; mg.font = '600 16px sans-serif'; mg.fillText('N ↑', 8, 20); mg.fillText('street ↓', 8, mc.height - 10);
+const mapBase = document.createElement('canvas'); mapBase.width = mc.width; mapBase.height = mc.height;
+{ const g = mapBase.getContext('2d');
+  g.fillStyle = '#3e5a33'; g.fillRect(0, 0, mc.width, mc.height);
+  g.fillStyle = '#8f8a84'; g.fillRect(mx(-3.6), my(8.4), mx(7.6) - mx(-3.6), my(5.4) - my(8.4));
+  g.fillStyle = '#7a5f55'; g.fillRect(mx(3.0), my(-11.6), mx(10.9) - mx(3.0), my(-17.7) - my(-11.6));
+  g.fillStyle = '#2a5560'; g.beginPath(); g.ellipse(mx(-6.2), my(12.4), 2.1 * mc.width / 23, 1.7 * mc.height / 34.5, 0, 0, Math.PI * 2); g.fill();
+  for (const R of ROOMS) { if (R.outdoor) continue; const [a, b, c, d] = R.r[0]; g.fillStyle = '#e9dfcf'; g.fillRect(mx(a), my(d), mx(c) - mx(a), my(b) - my(d)); }
+  g.fillStyle = '#2b2b2b';
+  for (const c of colliders) { if (c.x2 - c.x1 > 0.3 && c.y2 - c.y1 > 0.3) continue; g.fillRect(mx(c.x1), my(c.y2), Math.max(1.5, mx(c.x2) - mx(c.x1)), Math.max(1.5, my(c.y1) - my(c.y2))); }
+  g.fillStyle = '#fff'; g.font = '600 14px Inter, sans-serif'; g.fillText('N', 10, 20); g.fillText('street', 10, mc.height - 10);
 }
+let mapKey = '';
+function drawMap() {
+  const key = `${player.x.toFixed(2)},${player.y.toFixed(2)},${view.yaw.toFixed(2)},${currentRoom && currentRoom.name},${mode}`; if (key === mapKey) return; mapKey = key;
+  mg.drawImage(mapBase, 0, 0);
+  if (currentRoom && !currentRoom.outdoor) { const [a, b, c, d] = currentRoom.r[0]; mg.fillStyle = 'rgba(224,83,63,.35)'; mg.fillRect(mx(a), my(d), mx(c) - mx(a), my(b) - my(d)); }
+  const px = mx(player.x), py = my(player.y), fx = -Math.sin(view.yaw), fy = Math.cos(view.yaw);
+  mg.fillStyle = 'rgba(224,83,63,.25)'; mg.beginPath(); mg.moveTo(px, py); mg.arc(px, py, 34, -Math.atan2(fy, fx) - .6, -Math.atan2(fy, fx) + .6); mg.fill();
+  mg.fillStyle = '#e0533f'; mg.strokeStyle = '#fff'; mg.lineWidth = 2.5; mg.beginPath(); mg.arc(px, py, 6.5, 0, Math.PI * 2); mg.fill(); mg.stroke();
+}
+mc.addEventListener('click', e => {
+  const r = mc.getBoundingClientRect(); const x = MAP.x1 + (e.clientX - r.left) / r.width * (MAP.x2 - MAP.x1), y = MAP.y2 - (e.clientY - r.top) / r.height * (MAP.y2 - MAP.y1);
+  const R = roomAt(x, y); flyTo({ ...R, spot: [x, y, player.yaw] });
+});
 
-// ---------- loop ----------
+// ================= LOOP =================
 const clock = new THREE.Clock();
-const roomName = document.getElementById('roomName'), roomHint = document.getElementById('roomHint');
+let fpsN = 0, fpsT = 0, lowStreak = 0, lastCam = new THREE.Matrix4();
 function tick() {
+  requestAnimationFrame(tick);
   const dt = Math.min(clock.getDelta(), 0.05);
-  if (mode === 'walk') {
+  if (fly) {
+    fly.t += dt / fly.dur; const k = ease(Math.min(1, fly.t));
+    camera.position.lerpVectors(fly.from, fly.to, k); camera.quaternion.slerpQuaternions(fly.fromQ, fly.toQ, k);
+    if (fly.t >= 1) { const f = fly; fly = null; f.done && f.done(); } dirty = true;
+  } else if (mode === 'walk') {
     let f = 0, s = 0;
     if (keys.KeyW || keys.ArrowUp) f += 1; if (keys.KeyS || keys.ArrowDown) f -= 1;
-    if (keys.KeyD || keys.ArrowRight) s += 1; if (keys.KeyA || keys.ArrowLeft) s -= 1;
+    if (keys.KeyD) s += 1; if (keys.KeyA) s -= 1;
+    if (keys.ArrowLeft) player.yaw += 1.8 * dt; if (keys.ArrowRight) player.yaw -= 1.8 * dt;
     f -= joy.y; s += joy.x;
-    const sp = (keys.ShiftLeft || keys.ShiftRight ? 4.2 : 2.0) * dt;
-    const len = Math.hypot(f, s); if (len > 1) { f /= len; s /= len; }
-    const fx = -Math.sin(player.yaw), fy = Math.cos(player.yaw); // plan forward (north at yaw 0)
-    const rx = Math.cos(player.yaw), ry = Math.sin(player.yaw);
-    const steps = 3;
-    for (let i = 0; i < steps; i++) { player.x += (fx * f + rx * s) * sp / steps; player.y += (fy * f + ry * s) * sp / steps; collide(); }
-    player.x = Math.max(-45, Math.min(55, player.x)); player.y = Math.max(-45, Math.min(45, player.y));
+    const run = keys.ShiftLeft || keys.ShiftRight;
+    const fx = -Math.sin(player.yaw), fy = Math.cos(player.yaw), rx = Math.cos(player.yaw), ry = Math.sin(player.yaw);
+    let vx = fx * f + rx * s, vy = fy * f + ry * s;
+    if (walkTarget) {
+      const dx = walkTarget.x - player.x, dy = walkTarget.y - player.y, d = Math.hypot(dx, dy);
+      if (d < 0.15) walkTarget = null; else { vx = dx / d; vy = dy / d;
+        const want = Math.atan2(-dx, dy); let dyaw = ((want - player.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI; player.yaw += dyaw * Math.min(1, dt * 3); }
+    }
+    const len = Math.hypot(vx, vy); if (len > 1) { vx /= len; vy /= len; }
+    if (len > 0.01) {
+      const sp = (run ? 4.2 : 2.1) * dt, ox = player.x, oy = player.y;
+      for (let i = 0; i < 3; i++) { player.x += vx * sp / 3; player.y += vy * sp / 3; collide(); }
+      if (walkTarget) { if (Math.hypot(player.x - ox, player.y - oy) < sp * 0.2) { if (++walkTarget.stuck > 12) walkTarget = null; } else walkTarget.stuck = 0; }
+      player.x = Math.max(-45, Math.min(55, player.x)); player.y = Math.max(-45, Math.min(45, player.y));
+    }
+    // smooth look
+    const a = 1 - Math.exp(-dt * 18);
+    view.yaw += (player.yaw - view.yaw) * a; view.pitch += (player.pitch - view.pitch) * a;
     applyCam();
-  } else if (mode === 'over') orbit.update();
-  const R = roomAt(player.x, player.y);
-  if (R !== currentRoom) { currentRoom = R; roomName.textContent = R ? R.name : ''; roomHint.textContent = (R && R.note ? R.note + ' · ' : '') + (R && R.photo ? (isTouch ? 'Tap Photo for the real view' : 'P = real photo') : ''); }
-  drawMap();
-  composer.render();
-  labelRenderer.render(scene, camera);
-  requestAnimationFrame(tick);
+  } else if (mode === 'over') {
+    if (orbitFly) { orbitFly.t += dt / orbitFly.dur; const k = ease(Math.min(1, orbitFly.t)); camera.position.lerpVectors(orbitFly.from, orbitFly.to, k); orbit.target.lerpVectors(orbitFly.fromT, orbitFly.toT, k); if (orbitFly.t >= 1) orbitFly = null; }
+    overviewKeys(dt);
+    orbit.update();
+  }
+
+  camera.updateMatrixWorld();
+  if (!camera.matrixWorld.equals(lastCam)) { lastCam.copy(camera.matrixWorld); dirty = true; }
+  const R = mode === 'over' && focused ? focused : roomAt(player.x, player.y);
+  if (R !== currentRoom) {
+    currentRoom = R; $('roomName').textContent = R ? R.name : '';
+    $('roomNote').textContent = R ? (R.note || (R.photo ? 'Tap the camera for the real photo' : '')) : '';
+    ROOMS.forEach(Q => Q.btn && Q.btn.classList.toggle('cur', Q === R));
+  }
+  if (!$('map').classList.contains('hidden')) drawMap();
+  if (dirty) {
+    updateLightPool();
+    composer.render(); if (mode === 'over' || fly) labelRenderer.render(scene, camera);
+    dirty = false;
+    // fps + auto quality (only measured while actually rendering)
+    fpsN++; fpsT += dt;
+    if (fpsT > 1.5) {
+      const fps = fpsN / fpsT; $('fps').textContent = fps.toFixed(0) + ' fps';
+      if ($('autoQ').checked && loaded && mode !== 'intro') {
+        if (fps < 38) lowStreak++; else lowStreak = 0;
+        if (lowStreak >= 2) { lowStreak = 0; if (quality === 'high') setQuality('mid'); else if (quality === 'mid') setQuality('low'); }
+      }
+      fpsN = 0; fpsT = 0;
+    }
+  }
 }
-applyCam();
-camera.position.copy(P(16, 24, -26)); camera.lookAt(P(1.5, 0, -3));
-setMode('start'); groups.overhead.visible = true; orbit.enabled = false;
+// initial camera: hero shot of the house for the intro screen
+camera.position.copy(P(9, 17, -21)); camera.lookAt(P(1.5, 0, -2.5));
+setQuality(quality);
 tick();
-addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight); });
-window.__dbg = { player, setMode, camera, colliders, applyCam };
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); composer.setSize(innerWidth, innerHeight); if (gtao) gtao.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight); dirty = true; });
+window.__dbg = { player, setMode, camera, flyTo, ROOMS, renderer, get mode() { return mode; } };
 </script>
 </body>
 </html>
