@@ -804,22 +804,30 @@ scene.add(sun);
   const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; scene.background = t; }
 scene.fog = new THREE.Fog(0xd8e4ec, 45, 140);
 // image-based lighting for reflections (steel, glass, glossy floor)
-{ const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(renderer), 0.04).texture; scene.environmentIntensity = 0.22; }
+{ const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(renderer), 0.04).texture; }
+// three r160 has no scene.environmentIntensity: the env map's strength is set per material instead
+let envI = 0.22;
+function setEnvIntensity(v) { envI = v; scene.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) if (m.isMeshStandardMaterial) m.envMapIntensity = v; }); }
 // Two lighting profiles: bright daylight for the overview/outdoors, warm and dim inside (like a camera exposing for a room)
 const ambient = scene.children.find(o => o.isAmbientLight);
+// Sky fill (hemi/ambient/env) is the stand-in for skylight + bounce. It scales with how much of the sky is lit, so the sun
+// carries the contrast by day and the house goes properly dark at night (moonlight only), leaving the lamps to light it.
+// Indoors the fill is cut further: the roof and walls block most of the sky, light comes in through the glass and skylights.
 const LIGHTING = {
-  out: { sky: 0xd4e6ff, ground: 0x5b4a33, hemi: 1.0, amb: 0xffffff, ambI: 0.2, env: 0.22, exp: 0.95, lamp: 1.0 },
-  in:  { sky: 0xffe2c2, ground: 0x6e4a30, hemi: 0.55, amb: 0xffd2a0, ambI: 0.08, env: 0.1, exp: 0.9, lamp: 1.9 },
+  out: { hemi: 0.75, ambI: 0.04, env: 0.24, exp: 1.0, lamp: 1.0 },
+  in:  { hemi: 0.34, ambI: 0.02, env: 0.10, exp: 1.12, lamp: 1.6 },
 };
-let lightProfile = null, daylight = 1;
+let lightProfile = null, daylight = 1, skyTint = new THREE.Color(0xd4e6ff), sunWarm = 0;
 function setLighting(k) {
   if (k === lightProfile) return; lightProfile = k; const L = LIGHTING[k];
-  const d = daylight, on = SUN.lights;
-  hemi.color.setHex(L.sky); hemi.groundColor.setHex(L.ground); hemi.intensity = L.hemi * (0.05 + 0.95 * d);
-  ambient.color.setHex(L.amb); ambient.intensity = L.ambI * (0.15 + 0.85 * d);
-  scene.environmentIntensity = L.env * (0.15 + 0.85 * d);
-  renderer.toneMappingExposure = L.exp * (k === 'in' ? 1 + 0.35 * (1 - d) : 1);
-  lampBoost = on ? L.lamp * (1.2 - 0.4 * d) : 0;
+  const d = daylight, on = SUN.lights, dd = Math.pow(d, 1.4); // sky fill falls off fast through dusk
+  const moon = new THREE.Color(0x2a3a5c);
+  hemi.color.copy(moon).lerp(skyTint, d); hemi.groundColor.setHex(0x5b4a33).multiplyScalar(0.15 + 0.85 * d);
+  hemi.intensity = 0.05 + (L.hemi - 0.05) * dd;
+  ambient.color.setHex(0xffffff).lerp(C(0xffc48a), sunWarm * 0.5); ambient.intensity = L.ambI * dd + 0.004;
+  setEnvIntensity(L.env * dd + 0.015);
+  renderer.toneMappingExposure = L.exp * (1 + 0.12 * (1 - d)); // the eye adapts a little, not a lot
+  lampBoost = on ? L.lamp * (1.25 - 0.45 * d) : 0;
   M.light.emissiveIntensity = on ? 2.5 : 0; if (typeof F !== 'undefined') F.shade.emissiveIntensity = on ? 0.9 : 0.05;
 }
 let lampBoost = 1;
@@ -852,15 +860,16 @@ function applySun() {
   const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
   sun.position.copy(sun.target.position).addScaledVector(dir, 45);
   const ss = THREE.MathUtils.smoothstep;
-  daylight = ss(el, -0.12, 0.22);
+  daylight = ss(el, -0.15, 0.22);
   const high = ss(el, 0.02, 0.5);
-  sun.intensity = 2.7 * ss(el, -0.01, 0.1);
-  sun.color.copy(C(0xff9248).lerp(C(0xfff1de), high));
+  sun.intensity = 3.4 * ss(el, -0.01, 0.12) * (0.5 + 0.5 * high); // low sun is dimmer (more air in the way)
+  sun.color.copy(C(0xff8a3d).lerp(C(0xfff4e6), high)); sunWarm = (1 - high) * ss(el, -0.02, 0.06);
   // sky gradient: night -> sunset -> day
   const tt = daylight, top = mix3(C(0x0a0f1e), C(0x44598c), C(0x5f97d6), tt), hor = mix3(C(0x1a2132), C(0xf0a066), C(0xd6e6f2), Math.min(1, tt * 0.6 + high * 0.4));
   const gx = skyCanvas.getContext('2d'), gr = gx.createLinearGradient(0, 0, 0, 256);
   gr.addColorStop(0, '#' + top.getHexString()); gr.addColorStop(.49, '#' + hor.getHexString()); gr.addColorStop(.52, '#' + hor.clone().lerp(C(0x7d8a74), .3).getHexString()); gr.addColorStop(1, '#4a5442');
   gx.fillStyle = gr; gx.fillRect(0, 0, 4, 256); skyTex.needsUpdate = true; scene.fog.color.copy(hor);
+  skyTint.copy(top).lerp(hor, 0.5).lerp(C(0xffffff), 0.35);
   renderer.shadowMap.needsUpdate = true; lightProfile = null;
   const hh = Math.floor(SUN.hours), mm = Math.round((SUN.hours - hh) * 60);
   const lbl = document.getElementById('sunTime'); if (lbl) lbl.textContent = `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'} · ${new Date(yr, SUN.month, SUN.day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · sun ${Math.round(el * 180 / Math.PI)}°`;
@@ -1111,10 +1120,10 @@ const POOL = 6;
 const pool = Array.from({ length: POOL }, () => { const l = new THREE.PointLight(0xffd7a8, 0, 6, 1.7); scene.add(l); return l; });
 let poolSize = POOL;
 function updateLightPool() {
-  const cp = camera.position;
+  const cp = mode === 'over' ? orbit.target : camera.position;
   const near = lightSpots.map(s => [s, s.p.distanceToSquared(cp)]).sort((a, b) => a[1] - b[1]);
   pool.forEach((l, i) => {
-    const e = near[i]; if (!e || i >= poolSize || mode === 'over') { l.intensity = 0; return; }
+    const e = near[i]; if (!e || i >= poolSize || (mode === 'over' && daylight > 0.6)) { l.intensity = 0; return; }
     const [s, d2] = e; l.position.copy(s.p); l.color.setHex(s.c); l.distance = s.d;
     l.intensity = s.i * lampBoost * Math.max(0, Math.min(1, (40 - d2) / 25)); // fade far ones so swaps are invisible
   });
@@ -1368,7 +1377,7 @@ const modelCache = new Map();
 function loadModel(id) {
   if (!modelCache.has(id)) modelCache.set(id, new Promise((res, rej) => gltfLoader.load('ikea/' + id + '.glb', g => {
     g.scene.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true;
-      for (const m of [].concat(o.material)) { m.clippingPlanes = [cutPlane]; m.clipShadows = false; m.needsUpdate = true; } } });
+      for (const m of [].concat(o.material)) { m.clippingPlanes = [cutPlane]; m.clipShadows = false; m.envMapIntensity = envI; m.needsUpdate = true; } } });
     res(g.scene); }, undefined, rej)));
   return modelCache.get(id).then(sc => sc.clone(true));
 }
