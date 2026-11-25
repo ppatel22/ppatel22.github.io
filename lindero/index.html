@@ -442,7 +442,7 @@ const XT = 0.16; // exterior wall thickness
 //  south of the hall, west->east: Bedroom (wide) | hall bath | coat closet | ENTRY
 //  entry runs straight north into the living room; kitchen (U + N-S peninsula) east of the entry,
 //  dining east of the peninsula flowing north into the living room; wall between kitchen and living.
-//  covered deck tucked in the corner west of the living room (living's west wall is glass).
+//  living room spans the full width from the bedroom wing (x -0.6) to the east block wall.
 // South facade (front), x -7.4..1.1
 wall(-7.4, -4.2, 1.1, -4.2, { t: XT, matR: M.ext, ops: [
   win(-7.3, -6.5, 2.12, 'top'), win(-6.5, -4.7, 1.0, 2.05), win(-6.5, -4.7, 2.12, 'top'), win(-4.7, -3.2, 2.12, 'top'),
@@ -451,16 +451,13 @@ wall(-7.4, -4.2, 1.1, -4.2, { t: XT, matR: M.ext, ops: [
 ] });
 // Dining/kitchen <-> laundry (junction with front wing); high window into the master bath above the main roof
 wall(1.1, -4.3, 7.0, -4.3, { top: hWing, leafSide: -1, ops: [open(1.5, 2.4), win(3.5, 4.6, 2.5, 'top')] });
-// North facade (back): bedrooms with sliders/clerestories, then (after the covered deck) the living room
+// North facade (back): bedrooms with sliders/clerestories, then the living room
 wall(-7.4, 5.4, -0.6, 5.4, { t: XT, matL: M.ext, ops: [
   win(-7.3, -6.4, 2.12, 'top'), door(-6.4, -4.7, 2.1), win(-4.7, -3.9, 2.12, 'top'),
   win(-3.6, -3.0, 2.12, 'top'), win(-3.0, -1.3, 0.9, 2.05), win(-1.3, -0.7, 2.12, 'top'),
 ] });
-// living room back wall: tile fireplace panel | slider to the deck | low wall with clerestory
-wall(2.4, 5.4, 7.0, 5.4, { t: XT, matL: M.ext, ops: [door(3.4, 5.2, 2.15), win(5.2, 6.9, 2.15, 'top', 0.9)] });
-// covered deck in the corner: glass on both sides (foyer + living room)
-wall(-0.6, 2.6, 2.4, 2.6, { t: XT, matL: M.ext, ops: [win(-0.5, 1.3, 0, 'top', 0.9), door(1.4, 2.3, 2.15)] });
-wall(2.4, 2.6, 2.4, 5.4, { t: XT, matL: M.ext, ops: [win(2.5, 5.3, 0, 'top', 0.9)] });
+// living room back wall: windows | tile fireplace panel | slider to the deck | low wall with clerestory
+wall(-0.6, 5.4, 7.0, 5.4, { t: XT, matL: M.ext, ops: [win(-0.4, 2.3, 0.9, 2.05), win(-0.4, 2.3, 2.15, 'top'), door(3.4, 5.2, 2.15), win(5.2, 6.9, 2.15, 'top', 0.9)] });
 // West gable end
 wall(-7.4, -4.2, -7.4, 5.4, { t: XT, matL: M.ext, ops: [
   win(-3.3, -1.2, 1.0, 2.0), win(-4.1, 0.0, EAVE, 'top', 1.0),
@@ -470,9 +467,8 @@ wall(-7.4, -4.2, -7.4, 5.4, { t: XT, matL: M.ext, ops: [
 wall(7.0, -4.3, 7.0, 5.4, { t: XT, matR: M.ext, mat: M.block, ops: [
   win(-4.1, 5.3, 2.05, 'top', 1.2),
 ] });
-// bedroom wing east wall: coat closet + hall opening off the entry; exterior (block) along the covered deck
-wall(-0.6, -4.2, -0.6, 2.6, { ops: [door(-2.9, -2.1), open(0.0, 1.2, 2.2)] });
-wall(-0.6, 2.6, -0.6, 5.4, { t: XT, matR: M.block, ops: [win(3.3, 4.7, 1.0, 2.05)] });
+// bedroom wing east wall: coat closet + hall opening off the entry, then Bedroom 4 | living room
+wall(-0.6, -4.2, -0.6, 5.4, { ops: [door(-2.9, -2.1), open(0.0, 1.2, 2.2)] });
 // entry | kitchen (wood paneling on the entry side), door near the north end
 wall(1.2, -4.2, 1.2, 0.0, { matL: M.panel, ops: [door(-1.7, -0.9)] });
 // kitchen | living room (tall cabinets on the kitchen side); ends in the post seen from the dining area
@@ -574,10 +570,7 @@ for (const j of trimJobs) {
 }
 
 // ---------- floors ----------
-flatRect(-7.4, -4.2, 7.0, 2.6, 0.0, M.floor);
-flatRect(-7.4, 2.6, -0.6, 5.4, 0.0, M.floor);
-flatRect(2.4, 2.6, 7.0, 5.4, 0.0, M.floor);
-flatRect(-0.6, 2.6, 2.4, 5.4, -0.03, M.deck);   // covered deck
+flatRect(-7.4, -4.2, 7.0, 5.4, 0.0, M.floor);
 flatRect(1.1, -11.6, 7.0, -4.3, 0.0, M.floor);
 flatRect(3.2, -6.6, 5.8, -4.3, 0.004, M.tileD);
 flatRect(-3.1, -4.2, -1.3, 0.0, 0.004, M.tileB);
@@ -710,7 +703,7 @@ box(-3.04, -0.62, -2.9, -0.25, .42, .78, M.porcelain, { collide: false });
 box(-3.04, -3.82, -2.9, -3.72, 1.85, 1.9, chrome, { collide: false }); box(-2.94, -3.81, -2.86, -3.73, 1.78, 1.86, chrome, { collide: false });
 box(-3.04, -3.41, -1.36, -3.38, 1.98, 2.0, chrome, { collide: false });
 box(-1.85, -3.4, -1.36, -3.39, .6, 1.98, curtain, { collide: false, cast: false });
-// ---------- fireplace: white tile panel at the NW corner of the living room, next to the glass ----------
+// ---------- fireplace: white tile panel on the living room back wall, next to the slider ----------
 box(2.48, 5.29, 3.4, 5.32, 0, hMain(0, 5.3), M.subway, { collide: false, cast: false });
 box(2.55, 5.0, 3.3, 5.29, 0.15, 0.7, M.black);
 box(2.48, 4.8, 3.45, 5.32, 0, 0.05, M.black, { collide: false });
@@ -1059,7 +1052,7 @@ const ROOMS = [
   { name: 'Entry', r: [[-0.6, -4.2, 1.2, 0.0]], photo: 'entry', spot: [0.35, -3.6, 0] },
   { name: 'Kitchen', r: [[1.2, -4.2, 4.4, 0.0]], photo: 'kitchen', note: 'Stainless counters · gas range · peninsula', spot: [4.0, -3.9, 0.6] },
   { name: 'Dining', r: [[4.4, -4.3, 7.0, 0.0]], photo: 'kitchen', note: 'Opens to the living room', spot: [6.4, -3.9, 0.15] },
-  { name: 'Living room', r: [[2.4, 0.0, 7.0, 5.4], [-0.6, 0.0, 2.4, 2.6]], photo: 'living', note: 'Fireplace · glass to the deck', spot: [6.4, 0.4, 0.5] },
+  { name: 'Living room', r: [[-0.6, 0.0, 7.0, 5.4]], photo: 'living', note: 'Fireplace · slider to the deck', spot: [6.4, 0.4, 0.5] },
   { name: 'Hallway', r: [[-7.4, 0.0, -0.6, 1.2]], photo: 'hall', spot: [-1.0, 0.6, 1.57] },
   { name: 'Bedroom 2', r: [[-7.4, -4.2, -3.1, 0.0]], photo: 'bed3', note: '≈194 sq ft · mini-split', spot: [-3.6, -0.6, 2.2] },
   { name: 'Bathroom 1', r: [[-3.1, -4.2, -1.3, 0.0]], photo: 'bath2', note: '≈81 sq ft · full bath', spot: [-2.2, -0.5, 3.14] },
@@ -1072,7 +1065,6 @@ const ROOMS = [
   { name: 'Master closet', r: [[5.8, -6.6, 7.0, -4.3]], hide: true },
   { name: 'Bedroom 1', r: [[3.2, -11.6, 7.0, -6.6]], photo: 'office', note: 'Master · ≈204 sq ft · skylight · glass to the patio', spot: [3.5, -7.0, -2.5] },
   { name: 'Carport', r: [[7.0, -11.6, 10.6, -4.3]], outdoor: true, note: 'Covered, with skylight' },
-  { name: 'Covered deck', r: [[-0.6, 2.6, 2.4, 5.4]], photo: 'deck', outdoor: true, spot: [1.0, 3.0, 0] },
   { name: 'Deck', r: [[-3.6, 5.4, 7.6, 8.4]], photo: 'deck', outdoor: true, spot: [3.0, 8.0, Math.PI] },
   { name: 'Patio & pond', r: [[-9.6, 5.4, -3.6, 15.2]], photo: 'backyard', outdoor: true, spot: [-4.5, 9.0, 0.9] },
   { name: 'Backyard', r: [[-9.6, 5.4, 12, 15.2]], photo: 'backyard', outdoor: true, hide: true },
